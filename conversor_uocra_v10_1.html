@@ -358,8 +358,7 @@ tbody tr.st-B td{background:#fff0f0;}
     <div class="preview" id="preview-box"></div>
     <div id="nombre-txt" style="font-size:11px;color:var(--text3);font-family:monospace;margin-top:8px;"></div>
     <div class="btn-row">
-      <button class="btn btn-p" id="btn-download" disabled>&#8595; Descargar .txt</button>
-      <button class="btn btn-uocra" id="btn-uocra" disabled onclick="abrirUOCRA()">&#127760; Ir a UOCRA</button>
+      <button class="btn btn-uocra" id="btn-download" disabled onclick="descargarYAbrir()">&#8595; Descargar .txt y abrir UOCRA &#127760;</button>
       <button class="btn" id="btn-copy">Copiar al portapapeles</button>
       <div class="tip-wrap">
         <button class="btn btn-g" onclick="guardarHistorial()">&#128190; Guardar en historial</button>
@@ -392,10 +391,11 @@ function cargarDesdeURL() {
     if (!payload || !payload.empleados || !payload.empleados.length) return false;
 
     // Cargar empresa, período y tipo desde el payload
-    if (payload.empresa) document.getElementById('empresa').value = payload.empresa;
-    if (payload.mes)     document.getElementById('mes').value     = String(payload.mes).padStart(2,'0');
-    if (payload.anio)    document.getElementById('anio').value    = payload.anio;
-    if (payload.tipo)    document.getElementById('tipo').value    = payload.tipo === 'R' ? 'R' : 'O';
+    if (payload.empresa)       { try{ document.getElementById('empresa').value = payload.empresa; }catch(e){} }
+    if (payload.cuitEmpleador) { try{ document.getElementById('cuit-empleador').value = payload.cuitEmpleador; }catch(e){} }
+    if (payload.mes)           { try{ document.getElementById('mes').value = String(payload.mes).padStart(2,'0'); }catch(e){} }
+    if (payload.anio)          { try{ document.getElementById('anio').value = payload.anio; }catch(e){} }
+    if (payload.tipo)          { try{ document.getElementById('tipo').value = payload.tipo === 'R' ? 'R' : 'O'; }catch(e){} }
 
     // Convertir empleados del payload al formato interno
     empleados = payload.empleados.map(function(e) {
@@ -407,10 +407,33 @@ function cargarDesdeURL() {
         cuilOk:    ok,
         cuilMsg:   cuilMsg,
         mensual:   parseFloat(e.sueldo) || 0,
-        ingreso:   e.ingreso || null,
+        ingreso:   e.ingreso ? parsearFecha(e.ingreso) || e.ingreso : null,
         categoria: String(e.categoria || 'AYUDANTE'),
         cp:        String(e.cp || '4000').replace(/[^0-9]/g,'').slice(0,4),
-        convenio:  String(e.convenio || '01').replace(/[^0-9]/g,'').slice(0,2),
+        convenio:  (function(c) {
+          // Si ya es código numérico, usarlo directamente
+          var num = String(c || '').replace(/[^0-9]/g,'').slice(0,2);
+          if (num) return num.padStart(2,'0');
+          // Si es texto, mapear al código
+          var mapa = {
+            'OBREROS DE LA CONSTRUCCION': '01',
+            'OBREROS DE LA CONSTRUCCIÓN': '01',
+            'PREMOLDEADOS': '02',
+            'CAÑOS': '03', 'CANOS': '03',
+            'PIEDRA': '04',
+            'MARMOLISTAS': '05',
+            'PINTORES': '07',
+            'ELECTRICISTAS': '08',
+            'YESEROS': '12',
+            'CALEFACCIONISTAS': '13',
+            'HORMIGON': '15', 'HORMIGÓN': '15'
+          };
+          var upper = String(c || '').toUpperCase().trim();
+          for (var key in mapa) {
+            if (upper.indexOf(key) >= 0) return mapa[key];
+          }
+          return '01'; // default
+        })(e.convenio),
         baja:      false,
         incluir:   ok,
         afiliado:  'S'
@@ -558,7 +581,28 @@ function limpiarCUIL(raw){
 }
 function esBaja(obs){return obs&&/baja/i.test(String(obs));}
 function formatFecha(val){if(!val)return null;try{const d=new Date(val);if(isNaN(d.getTime()))return null;return String(d.getDate()).padStart(2,'0')+String(d.getMonth()+1).padStart(2,'0')+d.getFullYear();}catch{return null;}}
-function parsearFecha(str){if(!str)return null;str=str.trim();let m;m=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m)return new Date(+m[3],+m[2]-1,+m[1]);m=str.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(m)return new Date(+m[1],+m[2]-1,+m[3]);return null;}
+function parsearFecha(str){
+  if(!str) return null;
+  // Si ya es un objeto Date
+  if(str instanceof Date) return isNaN(str.getTime()) ? null : str;
+  str = String(str).trim();
+  let m;
+  // ISO: 2006-07-01
+  m=str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return new Date(+m[1],+m[2]-1,+m[3]);
+  // DD/MM/YYYY o D/M/YYYY
+  m=str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(m) return new Date(+m[3],+m[2]-1,+m[1]);
+  // YYYY/MM/DD
+  m=str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if(m) return new Date(+m[1],+m[2]-1,+m[3]);
+  // Timestamp numérico (de Excel/Sheets)
+  if(!isNaN(str) && str.length > 5) {
+    var d = new Date(parseInt(str));
+    if(!isNaN(d.getTime())) return d;
+  }
+  return null;
+}
 
 function resolveCat(txt){
   if(!txt)return null;
@@ -798,8 +842,7 @@ function actualizarTodo(){
   document.getElementById('preview-box').textContent=fileLines.length?fileLines.slice(0,5).join('\n')+(fileLines.length>5?'\n...':''):'(resolver errores para ver la vista previa)';
   document.getElementById('nombre-txt').textContent=fileLines.length?'Archivo: '+nombreTxt():'';
   document.getElementById('btn-download').disabled=!puede;
-  const _bu2=document.getElementById('btn-uocra');
-  if(_bu2 && !puede) _bu2.disabled=true;
+
   const btnUocra=document.getElementById('btn-uocra');
   const uocraHint=document.getElementById('uocra-hint');
   if(btnUocra){
@@ -813,8 +856,7 @@ function actualizarTodo(){
 // ── Descarga ──────────────────────────────────────────────────────────────
 function bajar(c,n){const b=new Blob([c],{type:'text/plain;charset=utf-8'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=n;a.click();URL.revokeObjectURL(u);}
 document.getElementById('btn-download').addEventListener('click',()=>{if(fileLines.length)bajar(fileLines.join('\r\n'),nombreTxt());
-  const _bu=document.getElementById('btn-uocra');
-  if(_bu) _bu.disabled=false;});
+});
 document.getElementById('btn-copy').addEventListener('click',()=>{navigator.clipboard.writeText(fileLines.join('\r\n')).then(()=>{const ok=document.getElementById('copy-ok');ok.style.display='inline';setTimeout(()=>ok.style.display='none',2000);});});
 
 // ── Historial ────────────────────────────────────────────────────────────
@@ -851,7 +893,17 @@ s('anio',now.getFullYear());
 actualizarHeader();
 
 function abrirUOCRA(){
-  window.open('https://www.uocra.org','_blank');
+  window.open('https://www.uocra.net/intranet/boletadeposito/index_empresas.asp?pagina=login','_blank');
+}
+
+function descargarYAbrir(){
+  if(!fileLines.length) return;
+  // 1. Descargar el .txt
+  bajar(fileLines.join('\r\n'), nombreTxt());
+  // 2. Pequeña pausa para que inicie la descarga y luego abre UOCRA
+  setTimeout(function(){
+    window.open('https://www.uocra.net/intranet/boletadeposito/index_empresas.asp?pagina=login','_blank');
+  }, 800);
 }
 </script>
 </body>
