@@ -380,6 +380,63 @@ tbody tr.st-B td{background:#fff0f0;}
 
 <script>
 let empleados=[], fileLines=[];
+
+// ── Cargar datos desde URL (enviados por el script de Google Sheets) ──
+function cargarDesdeURL() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const data = params.get('data');
+    if (!data) return false;
+
+    const payload = JSON.parse(atob(decodeURIComponent(data)));
+    if (!payload || !payload.empleados || !payload.empleados.length) return false;
+
+    // Cargar empresa, período y tipo desde el payload
+    if (payload.empresa) document.getElementById('empresa').value = payload.empresa;
+    if (payload.mes)     document.getElementById('mes').value     = String(payload.mes).padStart(2,'0');
+    if (payload.anio)    document.getElementById('anio').value    = payload.anio;
+    if (payload.tipo)    document.getElementById('tipo').value    = payload.tipo === 'R' ? 'R' : 'O';
+
+    // Convertir empleados del payload al formato interno
+    empleados = payload.empleados.map(function(e) {
+      const { cuil, ok, msg: cuilMsg } = limpiarCUIL(e.cuil || '');
+      return {
+        legajo:    String(e.legajo || ''),
+        nombre:    String(e.nombre || '').trim(),
+        cuil:      cuil,
+        cuilOk:    ok,
+        cuilMsg:   cuilMsg,
+        mensual:   parseFloat(e.sueldo) || 0,
+        ingreso:   e.ingreso || null,
+        categoria: String(e.categoria || 'AYUDANTE'),
+        cp:        String(e.cp || '4000').replace(/[^0-9]/g,'').slice(0,4),
+        convenio:  String(e.convenio || '01').replace(/[^0-9]/g,'').slice(0,2),
+        baja:      false,
+        incluir:   ok,
+        afiliado:  'S'
+      };
+    });
+
+    // Mostrar tabla y resultados
+    actualizarHeader();
+    renderTabla();
+    actualizarTodo();
+
+    const fileNameEl = document.getElementById('file-name');
+    if (fileNameEl) fileNameEl.textContent = '✓ ' + empleados.length + ' empleados recibidos desde la planilla';
+
+    const resultArea = document.getElementById('result-area');
+    if (resultArea) {
+      resultArea.style.display = 'block';
+      resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    return true;
+  } catch(err) {
+    console.error('Error al cargar desde URL:', err);
+    return false;
+  }
+}
 const CFG_KEY='uocra_cfg_v8', HIST_KEY='uocra_hist_v8';
 
 // ── Tablas UOCRA ──────────────────────────────────────────────────────────
@@ -787,6 +844,7 @@ document.getElementById('file-in').addEventListener('change',e=>{if(e.target.fil
 
 // ── Init ──────────────────────────────────────────────────────────────────
 cargarConfig();cargarHistorial();
+cargarDesdeURL();
 const now=new Date();
 s('mes',String(now.getMonth()+1).padStart(2,'0'));
 s('anio',now.getFullYear());
