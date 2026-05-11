@@ -791,7 +791,7 @@ function renderTabla(){
 
     // Fondo de Desempleo individual
     const mesNum2=parseInt(v('mes')),anioNum2=parseInt(v('anio'));
-    const fechaPer2=new Date(anioNum2,mesNum2-1,1);
+    const fechaPer2=new Date(anioNum2,mesNum2,0); // último día del mes
     let pctFondo=0.08,pctLabel='8%';
     if(e.ingreso){try{const ing2=new Date(e.ingreso);if(!isNaN(ing2.getTime())){const diff=(fechaPer2-ing2)/(1000*60*60*24*365.25);if(diff<=1){pctFondo=0.12;pctLabel='12%';}}}catch(ex){}}
     const fondoEmp=e.mensual*pctFondo;
@@ -865,7 +865,7 @@ function actualizarTodo(){
   // Si no hay fecha de ingreso se usa 8% y se advierte
   const hoy=new Date();
   const mesNum=parseInt(v('mes')); const anioNum=parseInt(v('anio'));
-  const fechaPeriodo=new Date(anioNum, mesNum-1, 1);
+  const fechaPeriodo=new Date(anioNum, mesNum, 0); // último día del mes
   let fondoTotal=0;
   let sinFechaIngreso=0;
   inc.forEach(e=>{
