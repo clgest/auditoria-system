@@ -491,6 +491,13 @@ const CP_ZONA={
 const ZONA_NOMBRES={'A':'Zona A','B':'Zona B','C':'Zona C','CA':'Zona C-Austral'};
 
 const SEG={
+  // 2020
+  202001:494.04,202002:494.04,202003:494.04,202004:494.04,202005:494.04,202006:494.04,
+  202007:584.14,202008:584.14,202009:584.14,202010:584.14,202011:584.14,202012:584.14,
+  // 2021
+  202101:681.8,202102:582.15,202103:681.8,202104:652,202105:681.8,202106:681.8,
+  202107:710.22,202108:710.22,202109:739.33,202110:780.08,202111:592.87,202112:592.87,
+  // Tabla original a partir de 2022
   202605:16177.54,202604:15891.5,202603:14749.86,202602:14460.64,
   202601:11193.41,202512:13926.42,202511:10641.55,202510:13557.9,
   202509:10370.19,202508:10237.11,202507:13081.3,202506:12938.98,
@@ -523,6 +530,7 @@ function zonaDeCP(cp){
 }
 
 // ── Header ────────────────────────────────────────────────────────────────
+function resetFondoSeg(){empleados.forEach(function(e){e.fondoManual=false;e.segManual=false;});if(empleados.length){renderTabla();actualizarTodo();}}
 function actualizarHeader(){
   const emp=v('empresa')||'Sin configurar';
   const mes=v('mes'),anio=v('anio'),tipo=v('tipo'),seq=v('secuencia');
@@ -557,6 +565,12 @@ function s(id,val){document.getElementById(id).value=val;}
 // ── Período ───────────────────────────────────────────────────────────────
 function detectarPeriodo(fname){
   const n=fname.toLowerCase().replace(/[_\-\.]/g,' ');
+  // Formato numérico: 03 2020, 032020, 03-2020, etc.
+  const numPat=n.match(/\b(0[1-9]|1[0-2])\s?(20\d{2})\b/);
+  if(numPat){s('mes',numPat[1]);s('anio',numPat[2]);actualizarHeader();return`Período detectado: ${numPat[1]}/${numPat[2]}`;}
+  const numPat2=n.match(/\b(20\d{2})\s?(0[1-9]|1[0-2])\b/);
+  if(numPat2){s('mes',numPat2[2]);s('anio',numPat2[1]);actualizarHeader();return`Período detectado: ${numPat2[2]}/${numPat2[1]}`;}
+  // Nombre del mes en texto
   for(const[mes,num] of Object.entries(MESES_TXT)){
     if(n.includes(mes)){const ma=n.match(/20\d{2}/);const anio=ma?ma[0]:new Date().getFullYear().toString();s('mes',num);s('anio',anio);actualizarHeader();return`Período detectado: ${mes.charAt(0).toUpperCase()+mes.slice(1)} ${anio}`;}
   }
@@ -664,7 +678,48 @@ function procesarArchivo(file){
   reader.readAsBinaryString(file);
 }
 
+function detectarPeriodoDesdeContenido(rows){
+  // Escanear primeras 15 filas buscando mes (texto) y año (número)
+  for(let i=0;i<Math.min(15,rows.length);i++){
+    const row=rows[i];
+    if(!row)continue;
+    let mesEncontrado=null, anioEncontrado=null;
+    for(let j=0;j<row.length;j++){
+      const cell=String(row[j]||'').toLowerCase().trim();
+      // Buscar mes en texto
+      for(const[mes,num] of Object.entries(MESES_TXT)){
+        if(cell===mes||cell.includes(mes)){mesEncontrado=num;break;}
+      }
+      // Buscar año 4 dígitos
+      const ma=String(row[j]||'').match(/^(20\d{2})$/);
+      if(ma)anioEncontrado=ma[1];
+    }
+    if(mesEncontrado&&anioEncontrado){
+      s('mes',mesEncontrado);s('anio',anioEncontrado);
+      actualizarHeader();
+      return 'Período detectado desde archivo: '+mesEncontrado+'/'+anioEncontrado;
+    }
+    // También buscar en una misma celda: "Marzo 2026", "03/2026"
+    for(let j=0;j<row.length;j++){
+      const cell=String(row[j]||'').trim();
+      const m1=cell.match(/^(0[1-9]|1[0-2])[\/\-](20\d{2})$/);
+      if(m1){s('mes',m1[1]);s('anio',m1[2]);actualizarHeader();return 'Período detectado: '+m1[1]+'/'+m1[2];}
+      const m2=cell.toLowerCase();
+      for(const[mes,num] of Object.entries(MESES_TXT)){
+        const ma=cell.match(/20\d{2}/);
+        if(m2.includes(mes)&&ma){s('mes',num);s('anio',ma[0]);actualizarHeader();return 'Período detectado: '+num+'/'+ma[0];}
+      }
+    }
+  }
+  return null;
+}
+
 function parsearRows(rows){
+  // Intentar detectar período desde contenido
+  const detCont=detectarPeriodoDesdeContenido(rows);
+  const del=document.getElementById('periodo-det');
+  if(detCont){del.textContent='✓ '+detCont;del.classList.add('show');}
+
   let hr=-1;
   for(let i=0;i<rows.length;i++){
     const r=rows[i].map(x=>String(x||'').toLowerCase());
@@ -740,15 +795,16 @@ function renderTabla(){
     let pctFondo=0.08,pctLabel='8%';
     if(e.ingreso){try{const ing2=new Date(e.ingreso);if(!isNaN(ing2.getTime())){const diff=(fechaPer2-ing2)/(1000*60*60*24*365.25);if(diff<=1){pctFondo=0.12;pctLabel='12%';}}}catch(ex){}}
     const fondoEmp=e.mensual*pctFondo;
-    // Si ya tiene valor editado usar ese, sino calcular
-    if(e.fondoEdit===undefined) e.fondoEdit=e.incluir?Math.round(fondoEmp*100)/100:0;
-    if(e.segEdit===undefined){const{val:sv0}=getSeguro(v('mes'),v('anio'));e.segEdit=e.incluir&&sv0?sv0:0;}
-    const fondoEmpHtml=e.incluir
-      ?`<span style="font-size:9px;color:var(--text3);">${pctLabel}</span><input class="td-input" style="width:88px;text-align:right;" value="${e.fondoEdit}" oninput="updEmp(${idx},'fondoEdit',parseFloat(this.value)||0);actualizarTodo();">`
-      :'—';
+    // FD: usar valor manual si fue editado, sino calcular desde período actual
+    const fondoCalc=Math.round(fondoEmp*100)/100;
+    if(!e.fondoManual) e.fondoEdit=e.incluir?fondoCalc:0;
     const{val:svEmp}=getSeguro(v('mes'),v('anio'));
+    if(!e.segManual) e.segEdit=e.incluir&&svEmp?svEmp:0;
+    const fondoEmpHtml=e.incluir
+      ?`<span style="font-size:9px;color:var(--text3);">${pctLabel}</span><input class="td-input" style="width:88px;text-align:right;" value="${e.fondoEdit}" oninput="updEmpFD(${idx},this.value)">`
+      :'—';
     const segEmpHtml=e.incluir
-      ?`<input class="td-input" style="width:80px;text-align:right;" value="${e.segEdit}" oninput="updEmp(${idx},'segEdit',parseFloat(this.value)||0);actualizarTodo();">`
+      ?`<input class="td-input" style="width:80px;text-align:right;" value="${e.segEdit||''}" oninput="updEmpSeg(${idx},this.value)">`
       :'—';
 
     tr.innerHTML=`
@@ -784,6 +840,8 @@ function renderTabla(){
 }
 
 function updEmp(i,f,val){empleados[i][f]=val.trim();renderTabla();actualizarTodo();}
+function updEmpFD(i,val){empleados[i].fondoEdit=parseFloat(val)||0;empleados[i].fondoManual=true;actualizarTodo();}
+function updEmpSeg(i,val){empleados[i].segEdit=parseFloat(val)||0;empleados[i].segManual=true;actualizarTodo();}
 function updFecha(i,val){const d=parsearFecha(val);empleados[i].ingreso=d||val;renderTabla();actualizarTodo();}
 function toggleEmp(i){empleados[i].incluir=!empleados[i].incluir;renderTabla();actualizarTodo();}
 
@@ -907,7 +965,7 @@ dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');}
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
 dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)procesarArchivo(f);});
 document.getElementById('file-in').addEventListener('change',e=>{if(e.target.files[0])procesarArchivo(e.target.files[0]);});
-['mes','anio','tipo','secuencia'].forEach(id=>{document.getElementById(id).addEventListener('change',actualizarHeader);});
+['mes','anio'].forEach(id=>{document.getElementById(id).addEventListener('change',resetFondoSeg);});['tipo','secuencia'].forEach(id=>{document.getElementById(id).addEventListener('change',actualizarHeader);});
 
 // ── Init ──────────────────────────────────────────────────────────────────
 cargarConfig();cargarHistorial();
