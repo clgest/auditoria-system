@@ -303,6 +303,8 @@ tbody tr.st-B td{background:#fff0f0;}
           <th style="min-width:150px;">Apellido y nombre</th>
           <th style="min-width:105px;">CUIL</th>
           <th style="min-width:105px;text-align:right;">Remuneración</th>
+          <th style="min-width:100px;text-align:right;">Fondo Desemp.<br><span style="font-weight:normal;color:var(--text3);">% según antig.</span></th>
+          <th style="min-width:90px;text-align:right;">Seg. Vida<br><span style="font-weight:normal;color:var(--text3);">por emp.</span></th>
           <th>CUIL</th>
           <th style="min-width:50px;">Afil.</th>
           <th style="min-width:120px;">Categoría<br><span style="font-weight:normal;color:var(--text3);">→ cód.</span></th>
@@ -732,11 +734,30 @@ function renderTabla(){
 
     const errHtml=errs.length?`<div style="font-size:10px;color:var(--red);font-family:monospace;margin-top:2px;">${errs.join(' · ')}</div>`:'';
 
+    // Fondo de Desempleo individual
+    const mesNum2=parseInt(v('mes')),anioNum2=parseInt(v('anio'));
+    const fechaPer2=new Date(anioNum2,mesNum2-1,1);
+    let pctFondo=0.08,pctLabel='8%';
+    if(e.ingreso){try{const ing2=new Date(e.ingreso);if(!isNaN(ing2.getTime())){const diff=(fechaPer2-ing2)/(1000*60*60*24*365.25);if(diff<=1){pctFondo=0.12;pctLabel='12%';}}}catch(ex){}}
+    const fondoEmp=e.mensual*pctFondo;
+    // Si ya tiene valor editado usar ese, sino calcular
+    if(e.fondoEdit===undefined) e.fondoEdit=e.incluir?Math.round(fondoEmp*100)/100:0;
+    if(e.segEdit===undefined){const{val:sv0}=getSeguro(v('mes'),v('anio'));e.segEdit=e.incluir&&sv0?sv0:0;}
+    const fondoEmpHtml=e.incluir
+      ?`<span style="font-size:9px;color:var(--text3);">${pctLabel}</span><input class="td-input" style="width:88px;text-align:right;" value="${e.fondoEdit}" oninput="updEmp(${idx},'fondoEdit',parseFloat(this.value)||0);actualizarTodo();">`
+      :'—';
+    const{val:svEmp}=getSeguro(v('mes'),v('anio'));
+    const segEmpHtml=e.incluir
+      ?`<input class="td-input" style="width:80px;text-align:right;" value="${e.segEdit}" oninput="updEmp(${idx},'segEdit',parseFloat(this.value)||0);actualizarTodo();">`
+      :'—';
+
     tr.innerHTML=`
       <td style="font-family:monospace;color:var(--text3);font-size:11px;">${e.legajo}</td>
       <td style="font-weight:500;min-width:140px;">${e.nombre}${errHtml}</td>
       <td style="font-family:monospace;font-size:11px;">${e.cuil||'—'}</td>
       <td style="text-align:right;font-family:monospace;font-size:11px;">${e.mensual.toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
+      <td style="text-align:right;font-family:monospace;font-size:11px;">${fondoEmpHtml}</td>
+      <td style="text-align:right;font-family:monospace;font-size:11px;">${segEmpHtml}</td>
       <td>${cb}</td>
       <td><select class="td-select" onchange="updEmp(${idx},'afiliado',this.value)">
         <option value="S" ${e.afiliado==='S'?'selected':''}>S</option>
@@ -790,23 +811,27 @@ function actualizarTodo(){
   let fondoTotal=0;
   let sinFechaIngreso=0;
   inc.forEach(e=>{
-    let pct=0.08; // default > 1 año
-    if(e.ingreso){
-      try{
-        const ing=new Date(e.ingreso);
-        if(!isNaN(ing.getTime())){
-          const diffMs=fechaPeriodo-ing;
-          const diffAnios=diffMs/(1000*60*60*24*365.25);
-          if(diffAnios<=1) pct=0.12;
-        }else{ sinFechaIngreso++; }
-      }catch(ex){ sinFechaIngreso++; }
-    }else{ sinFechaIngreso++; }
-    fondoTotal+=e.mensual*pct;
+    if(e.fondoEdit!==undefined){
+      fondoTotal+=e.fondoEdit;
+    } else {
+      let pct=0.08;
+      if(e.ingreso){
+        try{
+          const ing=new Date(e.ingreso);
+          if(!isNaN(ing.getTime())){
+            const diffMs=fechaPeriodo-ing;
+            const diffAnios=diffMs/(1000*60*60*24*365.25);
+            if(diffAnios<=1) pct=0.12;
+          }else{ sinFechaIngreso++; }
+        }catch(ex){ sinFechaIngreso++; }
+      }else{ sinFechaIngreso++; }
+      fondoTotal+=e.mensual*pct;
+    }
   });
 
   const fics=fondoTotal*0.02;
   const{val:sv}=getSeguro(v('mes'),v('anio'));
-  const segTot=sv?sv*ok:0;
+  const segTot=inc.reduce((s,e)=>s+(e.segEdit!==undefined?e.segEdit:(sv||0)),0);
   const fmt=n=>n.toLocaleString('es-AR',{minimumFractionDigits:2});
 
   document.getElementById('liq-emp').textContent=ok;
