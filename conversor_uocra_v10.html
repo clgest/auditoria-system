@@ -279,6 +279,12 @@ tbody tr.st-B td{background:#fff0f0;}
       <div style="margin-top:14px;font-size:11px;color:var(--text3);font-family:monospace;background:var(--surface2);padding:8px 12px;border-radius:var(--radius-sm);">
         Seguro de vida vigente por zona — mes seleccionado:<br>
         <span id="seg-ref" style="color:var(--accent);font-weight:bold;font-size:13px;">seleccioná el período primero</span>
+        <button class="btn" style="margin-left:10px;padding:3px 10px;font-size:11px;" onclick="toggleTablaSeguro()">&#9998; Editar tabla seguros</button>
+      </div>
+      <div id="tabla-seguros" style="display:none;margin-top:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;">
+        <div style="font-size:10px;font-weight:bold;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;">Valores seguro de vida por período — editables</div>
+        <div id="seg-tabla-contenido" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-size:11px;font-family:monospace;"></div>
+        <div style="margin-top:8px;font-size:10px;color:var(--text3);">Los cambios se aplican inmediatamente al liquidar. No se guardan entre sesiones.</div>
       </div>
     </div>
   </div>
@@ -530,6 +536,27 @@ function zonaDeCP(cp){
 }
 
 // ── Header ────────────────────────────────────────────────────────────────
+function toggleTablaSeguro(){
+  const el=document.getElementById('tabla-seguros');
+  el.style.display=el.style.display==='none'?'block':'none';
+  if(el.style.display==='block') renderTablaSeguro();
+}
+
+function renderTablaSeguro(){
+  const cont=document.getElementById('seg-tabla-contenido');
+  const keys=Object.keys(SEG).sort((a,b)=>b-a); // más reciente primero
+  cont.innerHTML=keys.map(function(k){
+    const anio=Math.floor(k/100), mes=k%100;
+    const label=('0'+mes).slice(-2)+'/'+anio;
+    return '<div style="display:flex;flex-direction:column;gap:2px;">'
+      +'<label style="font-size:10px;color:var(--text3);">'+label+'</label>'
+      +'<input type="number" step="0.01" value="'+SEG[k]+'" '
+      +'style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:4px;font-size:11px;font-family:monospace;" '
+      +'oninput="SEG['+k+']=parseFloat(this.value)||0;actualizarHeader();">'
+      +'</div>';
+  }).join('');
+}
+
 function resetFondoSeg(){empleados.forEach(function(e){e.fondoManual=false;e.segManual=false;});if(empleados.length){renderTabla();actualizarTodo();}}
 function actualizarHeader(){
   const emp=v('empresa')||'Sin configurar';
