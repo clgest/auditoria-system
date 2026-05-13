@@ -622,7 +622,7 @@ function limpiarCUIL(raw){
     msg:`Dígito verificador inválido: es ${dvReal}, debería ser ${dvEsperado}`};
   return{cuil:solo,ok:true,msg:'OK'};
 }
-function esBaja(obs){return obs&&/baja/i.test(String(obs));}
+function esBaja(obs,estado){if(estado&&String(estado).trim().toUpperCase()==='B')return true;if(!obs)return false;var s=String(obs).trim().toUpperCase();return s==='BAJA'||s.startsWith('BAJA ')&&s.length<=10;}
 function formatFecha(val){if(!val)return null;try{const d=new Date(val);if(isNaN(d.getTime()))return null;return String(d.getDate()).padStart(2,'0')+String(d.getMonth()+1).padStart(2,'0')+d.getFullYear();}catch{return null;}}
 function parsearFecha(str){
   if(!str) return null;
@@ -757,7 +757,7 @@ function parsearRows(rows){
   const col=(...ks)=>{for(const k of ks){const i=hdrs.findIndex(h=>h.includes(k));if(i>=0)return i;}return -1;};
   const iN=col('apellido'),iC=col('cuit','cuil'),iM=col('mensual','total');
   const iI=col('ingreso'),iCat=col('categor'),iO=col('observ');
-  const iCP=col('postal','cp'),iConv=col('convenio'),iZona=col('zona');
+  const iCP=col('postal','cp'),iConv=col('convenio'),iZona=col('zona'),iEst=col('estado');
   empleados=[];
   for(let i=hr+1;i<rows.length;i++){
     const row=rows[i];const nombre=row[iN];
@@ -769,7 +769,7 @@ function parsearRows(rows){
     const catTexto=String(row[iCat]||'');
     const cp=iCP>=0?String(row[iCP]||''):'';
     const conv=iConv>=0?String(row[iConv]||''):'';
-    const baja=esBaja(String(row[iO]||''));
+    const estadoEmpl=iEst>=0?String(row[iEst]||'').trim().toUpperCase():'';const baja=esBaja(String(row[iO]||''),estadoEmpl);
     empleados.push({
       legajo:String(row[1]||''),nombre:String(nombre).trim(),
       cuil,cuilOk:ok,cuilMsg,mensual,ingreso,categoria:catTexto,
@@ -827,12 +827,14 @@ function renderTabla(){
     if(!e.fondoManual) e.fondoEdit=e.incluir?fondoCalc:0;
     const{val:svEmp}=getSeguro(v('mes'),v('anio'));
     if(!e.segManual) e.segEdit=e.incluir&&svEmp?svEmp:0;
-    const fondoEmpHtml=e.incluir
-      ?`<span style="font-size:9px;color:var(--text3);">${pctLabel}</span><input class="td-input" style="width:88px;text-align:right;" value="${e.fondoEdit}" oninput="updEmpFD(${idx},this.value)">`
-      :'—';
+    const fondoEmpHtml=`<span style="font-size:9px;color:var(--text3);">${pctLabel}</span>`+
+      (e.incluir
+        ?`<input class="td-input" style="width:88px;text-align:right;" value="${e.fondoEdit}" oninput="updEmpFD(${idx},this.value)">`
+        :`<span style="font-family:monospace;font-size:11px;color:var(--text3)">${(e.fondoEdit||fondoCalc).toLocaleString('es-AR',{minimumFractionDigits:2})}</span>`);
+    const segVal=e.segEdit||(svEmp||0);
     const segEmpHtml=e.incluir
-      ?`<input class="td-input" style="width:80px;text-align:right;" value="${e.segEdit||''}" oninput="updEmpSeg(${idx},this.value)">`
-      :'—';
+      ?`<input class="td-input" style="width:80px;text-align:right;" value="${segVal}" oninput="updEmpSeg(${idx},this.value)">`
+      :(svEmp?`<span style="font-family:monospace;font-size:11px;color:var(--text3)">${svEmp.toLocaleString('es-AR',{minimumFractionDigits:2})}</span>`:'—');
 
     tr.innerHTML=`
       <td style="font-family:monospace;color:var(--text3);font-size:11px;">${e.legajo}</td>
