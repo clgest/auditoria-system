@@ -661,7 +661,7 @@ function resolveConv(cod){return CONVS[cod]?cod:null;}
 function validarEmp(e){
   const r=[];
   if(!e.cuilOk)r.push(`CUIL: ${e.cuilMsg||'inválido'}`);
-  if(e.mensual<=0)r.push('Remuneración cero');
+  if(e.mensual<0)r.push('Remuneración negativa — verificar');
   if(!formatFecha(e.ingreso))r.push('Fecha de ingreso faltante');
   if(!resolveCat(e.categoria))r.push('Categoría desconocida');
   if(!e.convenio)r.push('Convenio faltante');
@@ -764,7 +764,7 @@ function parsearRows(rows){
     if(!nombre||String(nombre).trim()==='')continue;
     if(/control|total|resumen|empresa/i.test(String(nombre)))continue;
     const{cuil,ok,msg:cuilMsg}=limpiarCUIL(row[iC]);
-    const mensual=parseFloat(row[iM])||0;
+    const mensualRaw=row[iM]; const mensual=(mensualRaw!==null&&mensualRaw!=='')?parseFloat(mensualRaw)||0:0;
     const ingreso=row[iI]||null;
     const catTexto=String(row[iCat]||'');
     const cp=iCP>=0?String(row[iCP]||''):'';
