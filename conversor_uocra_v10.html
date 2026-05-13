@@ -769,7 +769,9 @@ function parsearRows(rows){
     const catTexto=String(row[iCat]||'');
     const cp=iCP>=0?String(row[iCP]||''):'';
     const conv=iConv>=0?String(row[iConv]||''):'';
-    const estadoEmpl=iEst>=0?String(row[iEst]||'').trim().toUpperCase():'';const baja=esBaja(String(row[iO]||''),estadoEmpl);
+    // Baja: solo si estado='B' en columna estado — observaciones no determinan inclusión
+    const estadoEmpl=iEst>=0?String(row[iEst]||'').trim().toUpperCase():'';
+    const baja=(estadoEmpl==='B');
     empleados.push({
       legajo:String(row[1]||''),nombre:String(nombre).trim(),
       cuil,cuilOk:ok,cuilMsg,mensual,ingreso,categoria:catTexto,
