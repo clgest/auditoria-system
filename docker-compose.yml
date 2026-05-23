@@ -1,0 +1,33 @@
+services:
+  app:
+    container_name: auditoria_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    restart: unless-stopped
+    expose:
+      - "8000"
+    environment:
+      - VIRTUAL_HOST=auditoria.e-up.ar
+      - VIRTUAL_PORT=8000
+      - LETSENCRYPT_HOST=auditoria.e-up.ar
+      - LETSENCRYPT_EMAIL=au6usto@gmail.com
+    env_file:
+      - .env
+    volumes:
+      - auditoria-db:/data
+    networks:
+      - docker_containers
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  docker_containers:
+    external: true
+
+volumes:
+  auditoria-db:

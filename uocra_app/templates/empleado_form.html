@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Alta empleado — {{ empresa.nombre }}{% endblock %}
+{% block content %}
+
+<div class="breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Inicio</a><span class="sep">/</span>
+  <a href="{{ url_for('nomina', empresa_id=empresa.id) }}">{{ empresa.nombre }}</a><span class="sep">/</span>
+  <span>Alta empleado</span>
+</div>
+
+<div class="card" style="max-width:600px">
+  <div class="card-title big">Incorporación nueva</div>
+  <p style="color:#6b6760;font-size:11px;margin-bottom:16px">El legajo se asigna automáticamente.</p>
+
+  <form method="POST">
+    <div class="g2">
+      <div class="f">
+        <label>Apellido y Nombre *</label>
+        <input name="nombre" required placeholder="GARCIA JUAN CARLOS">
+      </div>
+      <div class="f">
+        <label>CUIL (11 dígitos) *</label>
+        <input name="cuil" required maxlength="11" placeholder="20123456789" oninput="chkCuil(this)">
+        <div id="cuil-msg" class="hint"></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="f">
+        <label>Fecha de ingreso</label>
+        <input type="date" name="fecha_ingreso">
+      </div>
+      <div class="f">
+        <label>Categoría</label>
+        <select name="categoria">
+          <option>AYUDANTE</option>
+          <option>MEDIO OFICIAL</option>
+          <option>OFICIAL</option>
+          <option>OFICIAL ESPECIALIZADO</option>
+          <option>SERENO</option>
+        </select>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="f">
+        <label>Jornada</label>
+        <select name="jornada">
+          <option>JORNADA COMPLETA</option>
+          <option>MEDIA JORNADA</option>
+          <option>TIEMPO PARCIAL</option>
+          <option>2/3 JORNADA</option>
+          <option>3/4 JORNADA</option>
+        </select>
+      </div>
+      <div class="f">
+        <label>Convenio</label>
+        <select name="convenio">
+          <option value="OBREROS DE LA CONSTRUCCION">01 — Obreros de la Construcción</option>
+          <option value="PINTORES">07 — Pintores</option>
+          <option value="ELECTRICISTAS DE OBRAS">08 — Electricistas</option>
+          <option value="YESEROS">12 — Yeseros</option>
+        </select>
+      </div>
+    </div>
+    <div class="f" style="max-width:120px">
+      <label>CP Obra</label>
+      <input name="cp" value="4000" maxlength="4">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button type="submit" class="btn btn-primary">Dar de alta</button>
+      <a href="{{ url_for('nomina', empresa_id=empresa.id) }}" class="btn">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+function chkCuil(inp){
+  var c=inp.value.replace(/[^0-9]/g,'');
+  var msg=document.getElementById('cuil-msg');
+  if(c.length!==11){msg.style.color='#b71c1c';msg.textContent=c.length+' dígitos';return;}
+  var p=[5,4,3,2,7,6,5,4,3,2],s=0;
+  for(var i=0;i<10;i++)s+=parseInt(c[i])*p[i];
+  var r=s%11,dv=11-r;if(dv===11)dv=0;if(dv===10)dv=9;
+  if(parseInt(c[10])!==dv){msg.style.color='#b71c1c';msg.textContent='X usar '+dv;}
+  else{msg.style.color='#2e7d32';msg.textContent='✓ válido';}
+}
+</script>
+{% endblock %}

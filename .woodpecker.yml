@@ -1,0 +1,23 @@
+when:
+  branch:
+    - master
+
+steps:
+  - name: deploy
+    image: docker:27-cli
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/sysbackup/auditoria:/host_repo
+      - /home/sysbackup/auditoria_envs:/envs:ro
+    commands:
+      - apk add --no-cache bash rsync
+      - mkdir -p /host_repo
+      - rsync -av --delete --exclude='.git' ./ /host_repo/
+      - cp /envs/production.env /host_repo/.env
+      - cd /host_repo && docker compose build --no-cache
+      - cd /host_repo && docker compose down --remove-orphans || true
+      - cd /host_repo && docker compose up -d
+      - cd /host_repo && docker compose ps
+    when:
+      - event: push
+        branch: master

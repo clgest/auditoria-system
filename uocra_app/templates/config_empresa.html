@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Configuración — {{ empresa.nombre }}{% endblock %}
+{% block content %}
+
+<div class="breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Inicio</a><span class="sep">/</span>
+  <span>{{ empresa.nombre }}</span><span class="sep">/</span>
+  <span>Configuración</span>
+</div>
+
+<div class="card" style="max-width:580px">
+  <div class="card-title big">Datos de la empresa</div>
+  <p style="color:#6b6760;font-size:11px;margin-bottom:16px">
+    Estos datos se usan en los mails automáticos y en los informes.
+  </p>
+
+  <form method="POST">
+    <div class="f">
+      <label>Razón social *</label>
+      <input name="nombre" value="{{ empresa.nombre }}" required>
+    </div>
+    <div class="g2">
+      <div class="f">
+        <label>CUIT</label>
+        <input name="cuit" value="{{ empresa.cuit or '' }}" placeholder="30-12345678-9">
+      </div>
+      <div class="f">
+        <label>CBU</label>
+        <input name="cbu" value="{{ empresa.cbu or '' }}" placeholder="0000000000000000000000">
+        <div class="hint">Para acreditación de haberes</div>
+      </div>
+    </div>
+    <div class="f">
+      <label>Domicilio</label>
+      <input name="domicilio" value="{{ empresa.domicilio or '' }}" placeholder="Av. Ejemplo 1234, Ciudad">
+    </div>
+    <div class="f">
+      <label>Actividad / Rubro</label>
+      <input name="actividad" value="{{ empresa.actividad or '' }}" placeholder="Construcción — obras viales">
+    </div>
+    <div class="f">
+      <label>Mail de la empresa</label>
+      <input type="email" name="mail" value="{{ empresa.mail or '' }}"
+             placeholder="empresa@email.com">
+      <div class="hint">
+        A este mail llegan las notificaciones del estudio (documentación subida, revisiones, etc.)
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button type="submit" class="btn btn-primary">Guardar</button>
+      <a href="{{ url_for('dashboard') }}" class="btn">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

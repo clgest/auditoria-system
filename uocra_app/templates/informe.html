@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Informe — {{ empresa.nombre }}{% endblock %}
+{% block content %}
+
+<div class="breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Inicio</a><span class="sep">/</span>
+  <a href="{{ url_for('novedades', empresa_id=empresa.id) }}">{{ empresa.nombre }}</a><span class="sep">/</span>
+  <span>Informe</span>
+</div>
+
+<div class="card">
+  <div class="card-title big">Informe de control — {{ empresa.nombre }}</div>
+  <form method="GET" style="display:flex;gap:10px;align-items:flex-end;margin-top:10px">
+    <div class="f" style="margin:0">
+      <label>Mes</label>
+      <select name="mes" style="width:140px">
+        {% for m in ['01','02','03','04','05','06','07','08','09','10','11','12'] %}
+        <option value="{{ m }}" {% if mes==m %}selected{% endif %}>
+          {{ ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][m|int] }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="f" style="margin:0">
+      <label>Año</label>
+      <input type="number" name="anio" value="{{ anio or 2026 }}" min="2020" max="2040" style="width:90px">
+    </div>
+    <button type="submit" class="btn btn-primary">Ver</button>
+    <button type="button" class="btn" onclick="window.print()">Imprimir</button>
+  </form>
+</div>
+
+{% if mes and anio %}
+{% set ok_list = [] %}
+{% set err_list = [] %}
+{% set ext_list = [] %}
+
+{% for n in novedades %}
+  {% if n.ext1 + n.ext2 > 0 %}{% set _ = ext_list.append(n) %}{% endif %}
+  {# simplificado - en producción agregar lógica de ctrl #}
+  {% set _ = ok_list.append(n) %}
+{% endfor %}
+
+<div class="g3">
+  <div class="card" style="text-align:center;border-top:4px solid #2e7d32">
+    <div style="font-size:28px;font-weight:bold;color:#2e7d32">{{ novedades|length }}</div>
+    <div style="font-size:11px;color:#6b6760;margin-top:4px">Novedades cargadas</div>
+  </div>
+  <div class="card" style="text-align:center;border-top:4px solid #e65100">
+    <div style="font-size:28px;font-weight:bold;color:#e65100">{{ ext_list|length }}</div>
+    <div style="font-size:11px;color:#6b6760;margin-top:4px">Con horas extras</div>
+  </div>
+  <div class="card" style="text-align:center;border-top:4px solid #1F3864">
+    <div style="font-size:28px;font-weight:bold;color:#1F3864">{{ mes }}/{{ anio }}</div>
+    <div style="font-size:11px;color:#6b6760;margin-top:4px">Período</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Detalle por empleado</div>
+  <div class="tw">
+    <table>
+      <thead>
+        <tr>
+          <th>Leg.</th><th>Empleado</th><th>Jornada</th><th>Estado</th>
+          <th>Hs 1Q</th><th>Inas 1Q</th><th>Hs 2Q</th><th>Inas 2Q</th>
+          <th>Extras</th><th>Observ.</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for n in novedades %}
+        <tr class="st-{{ n.estado }}">
+          <td style="font-family:monospace;color:#6b6760">{{ n.legajo }}</td>
+          <td style="font-weight:500">{{ n.emp_nombre }}</td>
+          <td style="font-size:11px">{{ n.jornada }}</td>
+          <td><span class="badge badge-info">{{ n.estado }}</span></td>
+          <td style="font-family:monospace;text-align:center">{{ n.hs1 or 0 }}</td>
+          <td style="font-family:monospace;text-align:center;{% if n.inas1 %}color:#b71c1c;font-weight:bold{% endif %}">{{ n.inas1 or 0 }}</td>
+          <td style="font-family:monospace;text-align:center">{{ n.hs2 or 0 }}</td>
+          <td style="font-family:monospace;text-align:center;{% if n.inas2 %}color:#b71c1c;font-weight:bold{% endif %}">{{ n.inas2 or 0 }}</td>
+          <td style="font-family:monospace;text-align:center;{% if (n.ext1 or 0)+(n.ext2 or 0) > 30 %}color:#b71c1c;font-weight:bold{% elif (n.ext1 or 0)+(n.ext2 or 0) > 0 %}color:#e65100{% endif %}">
+            {{ (n.ext1 or 0) + (n.ext2 or 0) or '—' }}
+          </td>
+          <td style="font-size:11px;color:#6b6760">{{ n.obs or '' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="10" style="text-align:center;color:#6b6760;padding:20px">No hay novedades cargadas para este período.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if ext_list %}
+<div class="card" style="border-left:4px solid #e65100">
+  <div class="card-title" style="color:#e65100">Horas extras declaradas</div>
+  {% for n in ext_list %}
+  <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0ede8;font-size:12px">
+    <span><strong>{{ n.legajo }} {{ n.emp_nombre }}</strong></span>
+    <span style="font-family:monospace;{% if (n.ext1 or 0)+(n.ext2 or 0) > 30 %}color:#b71c1c;font-weight:bold{% endif %}">
+      {{ (n.ext1 or 0)+(n.ext2 or 0) }}hs
+      {% if (n.ext1 or 0)+(n.ext2 or 0) > 30 %} — SUPERA LÍMITE{% endif %}
+    </span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endif %}
+
+{% endblock %}

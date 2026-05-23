@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Nómina — {{ empresa.nombre }}{% endblock %}
+{% block content %}
+
+<div class="breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Inicio</a>
+  <span class="sep">/</span>
+  <span>{{ empresa.nombre }}</span>
+  <span class="sep">/</span>
+  <span>Nómina</span>
+</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div class="card-title big" style="margin:0;padding:0;border:none">
+      Nómina — {{ empresa.nombre }}
+    </div>
+    <a href="{{ url_for('nuevo_empleado', empresa_id=empresa.id) }}" class="btn btn-primary btn-sm">
+      + Incorporar empleado
+    </a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="tw">
+    <table>
+      <thead>
+        <tr>
+          <th>Leg.</th>
+          <th>Apellido y Nombre</th>
+          <th>CUIL</th>
+          <th>Categoría</th>
+          <th>Jornada</th>
+          <th>F. Ingreso</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for emp in empleados %}
+        <tr class="st-{{ emp.estado }}">
+          <td style="font-family:monospace;color:#6b6760">{{ emp.legajo }}</td>
+          <td style="font-weight:500">{{ emp.nombre }}</td>
+          <td style="font-family:monospace;font-size:11px">{{ emp.cuil or '—' }}</td>
+          <td>{{ emp.categoria }}</td>
+          <td>{{ emp.jornada }}</td>
+          <td style="font-family:monospace;font-size:11px">{{ emp.fecha_ingreso or '—' }}</td>
+          <td>
+            <span class="badge {% if emp.estado=='A' %}badge-ok{% elif emp.estado=='I' %}badge-info{% elif emp.estado=='B' %}badge-err{% else %}badge-warn{% endif %}">
+              {{ emp.estado }}
+            </span>
+          </td>
+          <td>
+            <a href="{{ url_for('novedad_empleado', empresa_id=empresa.id, empleado_id=emp.id) }}"
+               class="btn btn-sm">Novedades</a>
+            <a href="{{ url_for('docs_empleado', empresa_id=empresa.id, empleado_id=emp.id) }}"
+               class="btn btn-sm">Docs</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" style="text-align:center;color:#6b6760;padding:20px">Sin empleados registrados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

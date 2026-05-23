@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Inicio{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="card-title big">Bienvenido, {{ nombre }}</div>
+  <p style="color:#6b6760;font-size:12px;margin-top:4px">
+    Rol: <strong>{{ rol }}</strong> — Seleccioná una empresa para operar.
+  </p>
+</div>
+
+{% if empresas %}
+<div class="g2">
+  {% for emp in empresas %}
+  <div class="card" style="border-left:4px solid #1F3864">
+    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+      <div>
+        <div style="font-size:15px;font-weight:bold;color:#1F3864">{{ emp.nombre }}</div>
+        <div style="font-size:11px;color:#6b6760;margin-top:2px">{{ emp.cuit or '—' }}</div>
+      </div>
+      <span class="badge badge-info">UOCRA</span>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <a href="{{ url_for('novedades', empresa_id=emp.id) }}" class="btn btn-primary btn-sm">Novedades</a>
+      <a href="{{ url_for('nomina', empresa_id=emp.id) }}" class="btn btn-sm">Nómina</a>
+      <a href="{{ url_for('informe', empresa_id=emp.id) }}" class="btn btn-sm">Informe</a>
+      <a href="{{ url_for('config_empresa', empresa_id=emp.id) }}" class="btn btn-sm">Configuración</a>
+      {% if rol == 'estudio' %}
+      <a href="{{ url_for('docs_pendientes', empresa_id=emp.id) }}" class="btn btn-sm btn-success">Docs pendientes</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if rol == 'estudio' %}
+<div class="card">
+  <div class="card-title">Nueva empresa</div>
+  <form method="POST" action="{{ url_for('admin_nueva_empresa') }}"
+        style="display:flex;gap:10px;align-items:flex-end">
+    <div class="f" style="flex:1;margin:0"><label>Nombre</label>
+      <input name="nombre" placeholder="Razón social" required></div>
+    <div class="f" style="flex:1;margin:0"><label>CUIT</label>
+      <input name="cuit" placeholder="30-12345678-9"></div>
+    <button type="submit" class="btn btn-success">Agregar</button>
+  </form>
+</div>
+{% endif %}
+
+{% else %}
+<div class="card">
+  <p style="color:#6b6760">No tenés empresas asignadas. Contactá al estudio.</p>
+</div>
+{% endif %}
+
+{% endblock %}

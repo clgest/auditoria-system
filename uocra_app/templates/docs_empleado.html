@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Documentación — {{ empleado.nombre }}{% endblock %}
+{% block content %}
+
+<div class="breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Inicio</a><span class="sep">/</span>
+  <a href="{{ url_for('nomina', empresa_id=empresa.id) }}">{{ empresa.nombre }}</a><span class="sep">/</span>
+  <span>Documentación — {{ empleado.nombre }}</span>
+</div>
+
+<!-- Header empleado -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div style="font-size:15px;font-weight:bold;color:#1F3864">
+        {{ empleado.legajo }} — {{ empleado.nombre }}
+      </div>
+      <div style="font-size:11px;color:#6b6760;margin-top:3px">
+        Estado actual:
+        <span class="badge badge-info">
+          {{ ESTADO_EMPL_LABEL.get(empleado.estado, empleado.estado) }}
+        </span>
+        · {{ empleado.categoria }} · {{ empleado.jornada }}
+      </div>
+    </div>
+    {% if pendientes %}
+    <div style="background:#ffebee;border:1px solid #ef9a9a;border-radius:6px;padding:8px 14px;font-size:12px;color:#b71c1c;text-align:center">
+      <strong>{{ pendientes|length }}</strong> doc{{ 'umento' if pendientes|length==1 else 'umentos' }} pendiente{{ 's' if pendientes|length>1 else '' }}
+    </div>
+    {% else %}
+    <div class="badge badge-ok" style="padding:6px 12px;font-size:11px">✓ Documentación completa</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Documentos requeridos y estado -->
+{% if requeridos %}
+<div class="card">
+  <div class="card-title">
+    Documentos requeridos para
+    {{ ESTADO_EMPL_LABEL.get(empleado.estado, empleado.estado) }}
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    {% for tipo in requeridos %}
+      {% set esta_subido = docs|selectattr('tipo_doc','equalto',tipo)|selectattr('estado_doc','ne','rechazado')|list %}
+      {% set doc_estado = esta_subido[0]['estado_doc'] if esta_subido else 'pendiente' %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border:1px solid {{ '#81c784' if doc_estado=='aprobado' else '#ef9a9a' if doc_estado=='rechazado' else '#ddd9d0' }};border-radius:6px;background:{{ '#e8f5e9' if doc_estado=='aprobado' else '#ffebee' if doc_estado=='rechazado' else '#fff' }}">
+        <div>
+          <div style="font-size:12px;font-weight:500">{{ DOC_LABELS.get(tipo,tipo) }}</div>
+          {% if esta_subido %}
+          <div style="font-size:10px;color:#6b6760;margin-top:1px">
+            {{ esta_subido[0]['subido_en'][:16] }}
+          </div>
+          {% endif %}
+        </div>
+        <span class="badge {% if doc_estado=='aprobado' %}badge-ok{% elif doc_estado=='rechazado' %}badge-err{% elif doc_estado=='subido' %}badge-info{% else %}badge-warn{% endif %}">
+          {{ doc_estado }}
+        </span>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Subir documento -->
+<div class="card">
+  <div class="card-title">Subir documento</div>
+  <form method="POST" action="{{ url_for('subir_doc', empresa_id=empresa.id, empleado_id=empleado.id) }}"
+        enctype="multipart/form-data">
+    <div class="g3">
+      <div class="f">
+        <label>Tipo de documento</label>
+        <select name="tipo_doc">
+          {% for tipo in requeridos %}
+          <option value="{{ tipo }}">{{ DOC_LABELS.get(tipo,tipo) }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="f">
+        <label>Motivo / Estado</label>
+        <select name="estado_empl">
+          {% for k,v in ESTADO_EMPL_LABEL.items() %}
+          <option value="{{ k }}" {{ 'selected' if k==empleado.estado else '' }}>{{ v }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="f">
+        <label>Archivo *</label>
+        <input type="file" name="archivo" required
+               style="background:#fff;padding:5px"
+               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+        <div class="hint">PDF, imagen o Word</div>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Subir documento</button>
+  </form>
+</div>
+
+<!-- Historial de documentos -->
+<div class="card">
+  <div class="card-title">Historial de documentación</div>
+  {% if docs %}
+  <div class="tw">
+    <table>
+      <thead>
+        <tr>
+          <th>Documento</th><th>Motivo</th><th>Origen</th>
+          <th>Subido por</th><th>Fecha</th><th>Estado</th><th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in docs %}
+        <tr>
+          <td style="font-weight:500">{{ DOC_LABELS.get(doc.tipo_doc, doc.tipo_doc) }}</td>
+          <td><span class="badge badge-info">{{ ESTADO_EMPL_LABEL.get(doc.estado_empl, doc.estado_empl) }}</span></td>
+          <td>
+            <span class="badge {% if doc.origen=='estudio' %}badge-warn{% else %}badge-info{% endif %}">
+              {{ doc.origen }}
+            </span>
+          </td>
+          <td style="font-size:11px">{{ doc.subido_nombre or '—' }}</td>
+          <td style="font-family:monospace;font-size:11px">{{ doc.subido_en[:16] }}</td>
+          <td>
+            <span class="badge {% if doc.estado_doc=='aprobado' %}badge-ok{% elif doc.estado_doc=='rechazado' %}badge-err{% else %}badge-info{% endif %}">
+              {{ doc.estado_doc }}
+            </span>
+            {% if doc.comentario %}
+            <div style="font-size:10px;color:#6b6760;margin-top:2px">{{ doc.comentario }}</div>
+            {% endif %}
+          </td>
+          <td style="white-space:nowrap">
+            <a href="{{ url_for('ver_doc', doc_id=doc.id) }}" class="btn btn-sm"
+               target="_blank">Ver</a>
+            <a href="{{ url_for('descargar_doc', doc_id=doc.id) }}" class="btn btn-sm">↓</a>
+            {% if rol == 'estudio' and doc.estado_doc == 'subido' %}
+            <button class="btn btn-sm btn-success"
+                    onclick="revisar({{ doc.id }},'aprobado')">✓</button>
+            <button class="btn btn-sm btn-danger"
+                    onclick="revisar({{ doc.id }},'rechazado')">✗</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:#6b6760;font-size:12px">Sin documentos subidos todavía.</p>
+  {% endif %}
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+function revisar(docId, estado) {
+  var comentario = "";
+  if (estado === "rechazado") {
+    comentario = prompt("Motivo del rechazo (opcional):");
+    if (comentario === null) return;
+  }
+  var fd = new FormData();
+  fd.append("estado", estado);
+  fd.append("comentario", comentario || "");
+  fetch("/docs/revisar/" + docId, { method:"POST", body:fd })
+    .then(r => r.json())
+    .then(d => { alert(d.msg); if(d.ok) location.reload(); });
+}
+</script>
+{% endblock %}

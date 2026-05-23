@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Usuarios{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="card-title big">Gestión de usuarios</div>
+</div>
+
+<div class="g2">
+  <!-- Lista usuarios -->
+  <div class="card">
+    <div class="card-title">Usuarios activos</div>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+          {% for u in usuarios %}
+          <tr>
+            <td style="font-weight:500">{{ u.nombre }}</td>
+            <td style="font-size:11px;color:#6b6760">{{ u.email }}</td>
+            <td>
+              <span class="badge {% if u.rol=='estudio' %}badge-warn{% else %}badge-info{% endif %}">
+                {{ u.rol }}
+              </span>
+            </td>
+            <td>
+              <span class="badge {% if u.activo %}badge-ok{% else %}badge-err{% endif %}">
+                {{ 'activo' if u.activo else 'inactivo' }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Nuevo usuario -->
+  <div class="card">
+    <div class="card-title">Nuevo usuario</div>
+    <form method="POST" action="{{ url_for('admin_nuevo_usuario') }}">
+      <div class="f"><label>Nombre completo *</label><input name="nombre" required placeholder="Juan García"></div>
+      <div class="f"><label>Email *</label><input type="email" name="email" required placeholder="usuario@email.com"></div>
+      <div class="f"><label>Clave *</label><input type="password" name="password" required placeholder="mínimo 6 caracteres" minlength="6"></div>
+      <div class="f">
+        <label>Rol</label>
+        <select name="rol">
+          <option value="cliente">Cliente</option>
+          <option value="estudio">Estudio</option>
+        </select>
+      </div>
+      <div class="f">
+        <label>Empresas asignadas</label>
+        {% for emp in empresas %}
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1a1917;margin-top:4px;font-weight:normal">
+          <input type="checkbox" name="empresas" value="{{ emp.id }}"> {{ emp.nombre }}
+        </label>
+        {% endfor %}
+      </div>
+      <button type="submit" class="btn btn-primary">Crear usuario</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

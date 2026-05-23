@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acceso — UOCRA Sistema</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",Arial,sans-serif;background:#1F3864;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.box{background:#fff;border-radius:12px;padding:36px 40px;width:100%;max-width:380px;box-shadow:0 8px 40px rgba(0,0,0,.25)}
+.logo{text-align:center;margin-bottom:24px}
+.logo h1{color:#1F3864;font-size:22px;font-weight:bold;margin-bottom:4px}
+.logo p{color:#6b6760;font-size:12px}
+.f{margin-bottom:14px}
+.f label{display:block;font-size:11px;color:#6b6760;font-weight:600;margin-bottom:4px}
+.f input{width:100%;padding:9px 12px;border:1px solid #ddd9d0;border-radius:6px;font-size:13px;background:#D6E4F7;color:#1a1917;font-family:inherit;transition:border-color .15s}
+.f input:focus{outline:none;border-color:#2d5fa8;background:#fff}
+.btn-login{width:100%;padding:11px;background:#1F3864;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;font-family:inherit;transition:background .15s;margin-top:6px}
+.btn-login:hover{background:#2d5fa8}
+.error{background:#ffebee;color:#b71c1c;border-left:4px solid #b71c1c;padding:9px 12px;border-radius:5px;font-size:12px;margin-bottom:14px}
+.footer-txt{text-align:center;font-size:10px;color:#9c9890;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">
+    <h1>&#9679; UOCRA Sistema</h1>
+    <p>CL Gestión Laboral — Acceso seguro</p>
+  </div>
+  {% if error %}
+  <div class="error">{{ error }}</div>
+  {% endif %}
+  <form method="POST" action="{{ url_for('login') }}">
+    <div class="f">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" placeholder="usuario@email.com" required autofocus>
+    </div>
+    <div class="f">
+      <label for="clave">Clave</label>
+      <input type="password" id="clave" name="clave" placeholder="••••••••" required>
+    </div>
+    <button type="submit" class="btn-login">Ingresar</button>
+  </form>
+  <div class="footer-txt">Acceso restringido. Todos los ingresos quedan registrados.</div>
+</div>
+</body>
+</html>

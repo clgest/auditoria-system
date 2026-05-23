@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Novedades — {{ empresa.nombre }}{% endblock %}
+{% block content %}
+
+<div class="breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Inicio</a><span class="sep">/</span>
+  <span>{{ empresa.nombre }}</span><span class="sep">/</span>
+  <span>Novedades</span>
+</div>
+
+<div class="card">
+  <div class="card-title big">Novedades — {{ empresa.nombre }}</div>
+  <form method="GET" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:10px">
+    <div class="f" style="margin:0">
+      <label>Mes</label>
+      <select name="mes" style="width:140px">
+        {% for m in ['01','02','03','04','05','06','07','08','09','10','11','12'] %}
+        <option value="{{ m }}" {% if mes==m %}selected{% endif %}>
+          {{ ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][m|int] }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="f" style="margin:0">
+      <label>Año</label>
+      <input type="number" name="anio" value="{{ anio or 2026 }}" min="2020" max="2040" style="width:90px">
+    </div>
+    <button type="submit" class="btn btn-primary">Ver período</button>
+    {% if mes and anio %}
+    <a href="{{ url_for('informe', empresa_id=empresa.id, mes=mes, anio=anio) }}" class="btn" style="margin-left:4px">
+      Ver informe
+    </a>
+    <button type="button" class="btn btn-success" onclick="confirmarPeriodo()" style="margin-left:4px">
+      ✓ Confirmar período
+    </button>
+    {% endif %}
+    {% if mes and anio %}
+    <a href="{{ url_for('informe', empresa_id=empresa.id, mes=mes, anio=anio) }}" class="btn">
+      Ver informe
+    </a>
+    <a href="{{ url_for('docs_pendientes', empresa_id=empresa.id) }}" class="btn">
+      Docs pendientes
+    </a>
+    <button class="btn btn-success" onclick="confirmarPeriodo()">
+      ✓ Confirmar período
+    </button>
+    {% endif %}
+  </form>
+</div>
+
+{% if mes and anio %}
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div class="card-title" style="margin:0;padding:0;border:none">
+      Período {{ mes }}/{{ anio }} — {{ novedades|length }} registros
+    </div>
+    <div style="font-size:11px;color:#6b6760">
+      Hacé clic en un empleado para cargar/editar sus horas
+    </div>
+  </div>
+
+  <!-- Empleados sin novedad -->
+  {% set ids_con_nov = novedades|map(attribute='empleado_id')|list %}
+  {% set sin_novedad = empleados|selectattr('id','not in',ids_con_nov)|list %}
+  {% if sin_novedad %}
+  <div style="background:#fff3e0;border:1px solid #ffcc80;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#e65100">
+    <strong>Sin cargar ({{ sin_novedad|length }}):</strong>
+    {{ sin_novedad|map(attribute='nombre')|join(', ') }}
+  </div>
+  {% endif %}
+
+  <div class="tw">
+    <table>
+      <thead>
+        <tr>
+          <th>Leg.</th><th>Empleado</th><th>Estado</th>
+          <th colspan="6" style="text-align:center;background:#e3f2fd">1ª Quincena</th>
+          <th style="background:#f5f5f5;width:6px"></th>
+          <th colspan="6" style="text-align:center;background:#e8f5e9">2ª Quincena</th>
+          <th></th>
+        </tr>
+        <tr>
+          <th></th><th></th><th></th>
+          <th style="background:#e3f2fd">Hs</th><th style="background:#e3f2fd">Inas</th><th style="background:#e3f2fd">Enf</th><th style="background:#e3f2fd">Fer</th><th style="background:#e3f2fd">Vac</th><th style="background:#e3f2fd">Ext</th>
+          <th style="background:#f5f5f5"></th>
+          <th style="background:#e8f5e9">Hs</th><th style="background:#e8f5e9">Inas</th><th style="background:#e8f5e9">Enf</th><th style="background:#e8f5e9">Fer</th><th style="background:#e8f5e9">Vac</th><th style="background:#e8f5e9">Ext</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for n in novedades %}
+        <tr class="st-{{ n.estado }}">
+          <td style="font-family:monospace;color:#6b6760">{{ n.legajo }}</td>
+          <td style="font-weight:500">{{ n.emp_nombre }}</td>
+          <td><span class="badge badge-info">{{ n.estado }}</span></td>
+          <td style="font-family:monospace;text-align:center">{{ n.hs1 or '—' }}</td>
+          <td style="font-family:monospace;text-align:center;{% if n.inas1 %}color:#b71c1c{% endif %}">{{ n.inas1 or '—' }}</td>
+          <td style="font-family:monospace;text-align:center">{{ n.enf1 or '—' }}</td>
+          <td style="font-family:monospace;text-align:center">{{ n.fer1 or '—' }}</td>
+          <td style="font-family:monospace;text-align:center">{{ n.vac1 or '—' }}</td>
+          <td style="font-family:monospace;text-align:center;{% if n.ext1 %}color:#e65100{% endif %}">{{ n.ext1 or '—' }}</td>
+          <td style="background:#f5f5f5"></td>
+          <td style="font-family:monospace;text-align:center">{{ n.hs2 or '—' }}</td>
+          <td style="font-family:monospace;text-align:center;{% if n.inas2 %}color:#b71c1c{% endif %}">{{ n.inas2 or '—' }}</td>
+          <td style="font-family:monospace;text-align:center">{{ n.enf2 or '—' }}</td>
+          <td style="font-family:monospace;text-align:center">{{ n.fer2 or '—' }}</td>
+          <td style="font-family:monospace;text-align:center">{{ n.vac2 or '—' }}</td>
+          <td style="font-family:monospace;text-align:center;{% if n.ext2 %}color:#e65100{% endif %}">{{ n.ext2 or '—' }}</td>
+          <td>
+            <a href="{{ url_for('novedad_empleado', empresa_id=empresa.id, empleado_id=n.empleado_id, mes=mes, anio=anio) }}"
+               class="btn btn-sm">Editar</a>
+          </td>
+        </tr>
+        {% endfor %}
+
+        <!-- Empleados sin novedad -->
+        {% for emp in empleados %}
+          {% if emp.id not in ids_con_nov %}
+          <tr>
+            <td style="font-family:monospace;color:#6b6760">{{ emp.legajo }}</td>
+            <td style="color:#9c9890">{{ emp.nombre }}</td>
+            <td><span class="badge" style="background:#f5f4f0;color:#9c9890">—</span></td>
+            <td colspan="13" style="color:#9c9890;font-size:11px">Sin cargar</td>
+            <td>
+              <a href="{{ url_for('novedad_empleado', empresa_id=empresa.id, empleado_id=emp.id, mes=mes, anio=anio) }}"
+                 class="btn btn-primary btn-sm">Cargar</a>
+            </td>
+          </tr>
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarPeriodo() {
+  if (!confirm("¿Confirmar el período {{ mes }}/{{ anio }}?\n\nEsto enviará un aviso al estudio. Esta acción no se puede deshacer.")) return;
+  var fd = new FormData();
+  fd.append("mes","{{ mes }}");
+  fd.append("anio","{{ anio }}");
+  fetch("{{ url_for('confirmar_periodo_route', empresa_id=empresa.id) }}", {
+    method:"POST", body:fd
+  })
+  .then(r => r.json())
+  .then(d => {
+    alert(d.msg);
+    if (d.ok) location.reload();
+  });
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarPeriodo() {
+  if (!confirm("¿Confirmar el período y notificar al estudio?")) return;
+  var fd = new FormData();
+  fd.append("mes", "{{ mes }}");
+  fd.append("anio", "{{ anio }}");
+  fetch("{{ url_for('confirmar_periodo_route', empresa_id=empresa.id) }}", {
+    method:"POST", body:fd
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    alert(d.msg);
+    if(d.ok) location.reload();
+  });
+}
+</script>
+{% endblock %}

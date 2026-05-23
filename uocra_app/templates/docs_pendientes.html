@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Documentos pendientes — {{ empresa.nombre }}{% endblock %}
+{% block content %}
+
+<div class="breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Inicio</a><span class="sep">/</span>
+  <span>{{ empresa.nombre }}</span><span class="sep">/</span>
+  <span>Documentos pendientes</span>
+</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div class="card-title big" style="margin:0;padding:0;border:none">
+      Documentos por revisar — {{ empresa.nombre }}
+    </div>
+    <span class="badge {% if docs %}badge-warn{% else %}badge-ok{% endif %}" style="font-size:12px;padding:5px 12px">
+      {{ docs|length }} pendiente{{ 's' if docs|length != 1 else '' }}
+    </span>
+  </div>
+</div>
+
+{% if docs %}
+<div class="card">
+  <div class="tw">
+    <table>
+      <thead>
+        <tr>
+          <th>Empleado</th><th>Documento</th><th>Motivo</th>
+          <th>Origen</th><th>Subido por</th><th>Fecha</th><th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in docs %}
+        <tr id="row-{{ doc.id }}">
+          <td>
+            <span style="font-family:monospace;color:#6b6760;font-size:11px">{{ doc.legajo }}</span>
+            <span style="font-weight:500;margin-left:4px">{{ doc.emp_nombre }}</span>
+          </td>
+          <td style="font-weight:500">{{ DOC_LABELS.get(doc.tipo_doc, doc.tipo_doc) }}</td>
+          <td><span class="badge badge-info">{{ ESTADO_EMPL_LABEL.get(doc.estado_empl, doc.estado_empl) }}</span></td>
+          <td><span class="badge {% if doc.origen=='estudio' %}badge-warn{% else %}badge-info{% endif %}">{{ doc.origen }}</span></td>
+          <td style="font-size:11px">{{ doc.subido_nombre or '—' }}</td>
+          <td style="font-family:monospace;font-size:11px;white-space:nowrap">{{ doc.subido_en[:16] }}</td>
+          <td style="white-space:nowrap">
+            <a href="{{ url_for('ver_doc', doc_id=doc.id) }}" class="btn btn-sm" target="_blank">Ver</a>
+            <a href="{{ url_for('descargar_doc', doc_id=doc.id) }}" class="btn btn-sm">↓</a>
+            <button class="btn btn-sm btn-success" onclick="revisar({{ doc.id }},'{{ doc.emp_nombre }}','aprobado')">✓ Aprobar</button>
+            <button class="btn btn-sm btn-danger" onclick="revisar({{ doc.id }},'{{ doc.emp_nombre }}','rechazado')">✗ Rechazar</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:40px">
+  <div style="font-size:32px;margin-bottom:12px">✓</div>
+  <div style="font-weight:bold;color:#2e7d32;font-size:15px">Sin documentos pendientes</div>
+  <div style="color:#6b6760;font-size:12px;margin-top:4px">Toda la documentación fue revisada.</div>
+</div>
+{% endif %}
+
+{% endblock %}
+{% block extra_js %}
+<script>
+function revisar(docId, empNombre, estado) {
+  var comentario = "";
+  if (estado === "rechazado") {
+    comentario = prompt("Motivo del rechazo para " + empNombre + " (opcional):");
+    if (comentario === null) return;
+  } else {
+    if (!confirm("Aprobar documento de " + empNombre + "?")) return;
+  }
+  var fd = new FormData();
+  fd.append("estado", estado); fd.append("comentario", comentario || "");
+  fetch("/docs/revisar/" + docId, {method:"POST", body:fd})
+    .then(r=>r.json()).then(d=>{
+      if(d.ok){ document.getElementById("row-"+docId).style.opacity="0.3"; setTimeout(()=>location.reload(),800); }
+      else alert(d.msg);
+    });
+}
+</script>
+{% endblock %}

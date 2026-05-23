@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Configuración Mail{% endblock %}
+{% block content %}
+
+<div class="card" style="max-width:520px">
+  <div class="card-title big">Configuración de correo saliente</div>
+  <p style="color:#6b6760;font-size:11px;margin-bottom:16px">
+    Configurá el servidor SMTP desde el que se envían los mails automáticos.
+    Para Gmail con verificación en dos pasos, usá una <strong>contraseña de aplicación</strong>.
+  </p>
+
+  <form method="POST">
+    <div class="g2">
+      <div class="f">
+        <label>Servidor SMTP</label>
+        <input name="smtp_host" value="{{ cfg.smtp_host or 'smtp.gmail.com' }}">
+      </div>
+      <div class="f">
+        <label>Puerto</label>
+        <input type="number" name="smtp_port" value="{{ cfg.smtp_port or 587 }}">
+      </div>
+    </div>
+    <div class="f">
+      <label>Mail emisor (usuario SMTP)</label>
+      <input type="email" name="smtp_user" value="{{ cfg.smtp_user or '' }}"
+             placeholder="clgest@gmail.com">
+    </div>
+    <div class="f">
+      <label>Contraseña / App password</label>
+      <input type="password" name="smtp_password" value="{{ cfg.smtp_password or '' }}"
+             placeholder="••••••••••••••••">
+      <div class="hint">
+        Gmail: Configuración → Seguridad → Contraseñas de aplicaciones
+      </div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid #e0ddd8;margin:14px 0">
+    <div class="card-title" style="margin-bottom:10px">Destinatarios del estudio</div>
+
+    <div class="g2">
+      <div class="f">
+        <label>Estudio — mail 1</label>
+        <input type="email" name="mail_estudio_1" value="{{ cfg.mail_estudio_1 or '' }}"
+               placeholder="clgest@gmail.com">
+      </div>
+      <div class="f">
+        <label>Estudio — mail 2</label>
+        <input type="email" name="mail_estudio_2" value="{{ cfg.mail_estudio_2 or '' }}"
+               placeholder="clgestad@gmail.com">
+      </div>
+    </div>
+    <div class="hint" style="margin-bottom:14px">
+      Estos mails reciben las notificaciones cuando el cliente confirma un período
+      o sube documentación.
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar configuración</button>
+  </form>
+</div>
+
+{% endblock %}

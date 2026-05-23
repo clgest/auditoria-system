@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Novedad — {{ empleado.nombre }}{% endblock %}
+{% block content %}
+
+<div class="breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Inicio</a><span class="sep">/</span>
+  <a href="{{ url_for('novedades', empresa_id=empresa.id) }}">{{ empresa.nombre }}</a><span class="sep">/</span>
+  <a href="{{ url_for('novedades', empresa_id=empresa.id, mes=mes, anio=anio) }}">{{ mes }}/{{ anio }}</a><span class="sep">/</span>
+  <span>{{ empleado.nombre }}</span>
+</div>
+
+<div class="card" style="max-width:760px">
+  <!-- Header empleado -->
+  <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:16px">
+    <div>
+      <div style="font-size:15px;font-weight:bold;color:#1F3864">{{ empleado.nombre }}</div>
+      <div style="font-size:11px;color:#6b6760;margin-top:3px">
+        Leg. {{ empleado.legajo }} · {{ empleado.categoria }} · {{ empleado.jornada }}
+      </div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#6b6760">
+      Período <strong>{{ mes }}/{{ anio }}</strong>
+    </div>
+  </div>
+
+  <div id="msg-box"></div>
+
+  <!-- Estado y fechas -->
+  <div class="g2" style="margin-bottom:14px">
+    <div class="f">
+      <label>Estado del período</label>
+      <select id="estado" onchange="onEstado()">
+        <option value="A" {% if not novedad or novedad.estado=='A' %}selected{% endif %}>A — Activo</option>
+        <option value="I" {% if novedad and novedad.estado=='I' %}selected{% endif %}>I — Incorporación</option>
+        <option value="E" {% if novedad and novedad.estado=='E' %}selected{% endif %}>E — Enfermedad</option>
+        <option value="V" {% if novedad and novedad.estado=='V' %}selected{% endif %}>V — Vacaciones</option>
+        <option value="ART" {% if novedad and novedad.estado=='ART' %}selected{% endif %}>ART — Accidente</option>
+        <option value="B" {% if novedad and novedad.estado=='B' %}selected{% endif %}>B — Baja</option>
+      </select>
+    </div>
+    <div id="blk-fechas" style="display:none">
+      <div class="g2">
+        <div class="f"><label>Fecha inicio</label><input type="date" id="fecha_ini" value="{{ novedad.fecha_ini or '' if novedad else '' }}"></div>
+        <div class="f"><label>Fecha fin</label><input type="date" id="fecha_fin" value="{{ novedad.fecha_fin or '' if novedad else '' }}"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Protocolo -->
+  <div id="protocolo" style="display:none;background:#fdf3dc;border-left:3px solid #d4a017;padding:8px 12px;border-radius:5px;font-size:11px;color:#7a4f00;margin-bottom:14px"></div>
+
+  <!-- Quincenas -->
+  <div id="blk-horas">
+    <div class="g2">
+      <!-- 1Q -->
+      <div>
+        <div style="font-size:10px;font-weight:bold;text-transform:uppercase;color:#6b6760;letter-spacing:.06em;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #e0ddd8">
+          1ª Quincena
+        </div>
+        <div class="q-grid">
+          <div><span class="q-label">Hs trab.</span><input class="q-input" type="number" id="hs1" min="0" step="1" value="{{ novedad.hs1 or '' if novedad else '' }}" oninput="chkH()"></div>
+          <div><span class="q-label">Inasist.</span><input class="q-input" type="number" id="inas1" min="0" step="1" value="{{ novedad.inas1 or '' if novedad else '' }}" oninput="chkH()"></div>
+          <div><span class="q-label">Enf.</span><input class="q-input" type="number" id="enf1" min="0" step="1" value="{{ novedad.enf1 or '' if novedad else '' }}" oninput="chkH()"></div>
+          <div><span class="q-label">Feriados</span><input class="q-input" type="number" id="fer1" min="0" step="1" value="{{ novedad.fer1 or '' if novedad else '' }}" oninput="chkH()"></div>
+          <div><span class="q-label">Vacac.</span><input class="q-input" type="number" id="vac1" min="0" step="1" value="{{ novedad.vac1 or '' if novedad else '' }}" oninput="chkH()"></div>
+          <div><span class="q-label" id="la1">Extras</span><input class="q-input" type="number" id="ext1" min="0" step="1" value="{{ novedad.ext1 or '' if novedad else '' }}" oninput="chkH()"></div>
+        </div>
+        <div id="wh1" style="margin-top:6px;font-size:11px;display:none;padding:6px 10px;border-radius:4px;font-weight:600"></div>
+      </div>
+      <!-- 2Q -->
+      <div>
+        <div style="font-size:10px;font-weight:bold;text-transform:uppercase;color:#6b6760;letter-spacing:.06em;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #e0ddd8">
+          2ª Quincena
+        </div>
+        <div class="q-grid">
+          <div><span class="q-label">Hs trab.</span><input class="q-input" type="number" id="hs2" min="0" step="1" value="{{ novedad.hs2 or '' if novedad else '' }}" oninput="chkH()"></div>
+          <div><span class="q-label">Inasist.</span><input class="q-input" type="number" id="inas2" min="0" step="1" value="{{ novedad.inas2 or '' if novedad else '' }}" oninput="chkH()"></div>
+          <div><span class="q-label">Enf.</span><input class="q-input" type="number" id="enf2" min="0" step="1" value="{{ novedad.enf2 or '' if novedad else '' }}" oninput="chkH()"></div>
+          <div><span class="q-label">Feriados</span><input class="q-input" type="number" id="fer2" min="0" step="1" value="{{ novedad.fer2 or '' if novedad else '' }}" oninput="chkH()"></div>
+          <div><span class="q-label">Vacac.</span><input class="q-input" type="number" id="vac2" min="0" step="1" value="{{ novedad.vac2 or '' if novedad else '' }}" oninput="chkH()"></div>
+          <div><span class="q-label" id="la2">Extras</span><input class="q-input" type="number" id="ext2" min="0" step="1" value="{{ novedad.ext2 or '' if novedad else '' }}" oninput="chkH()"></div>
+        </div>
+        <div id="wh2" style="margin-top:6px;font-size:11px;display:none;padding:6px 10px;border-radius:4px;font-weight:600"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Observaciones -->
+  <div class="f" style="margin-top:12px">
+    <label>Observaciones</label>
+    <textarea id="obs" rows="2">{{ novedad.obs or '' if novedad else '' }}</textarea>
+  </div>
+
+  <!-- Botones -->
+  <div style="display:flex;gap:10px;margin-top:16px">
+    <button class="btn btn-primary" id="btn-guardar" onclick="guardar()">Guardar</button>
+    <a href="{{ url_for('novedades', empresa_id=empresa.id, mes=mes, anio=anio) }}" class="btn">Volver</a>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+const JORNADA = "{{ empleado.jornada }}";
+const LIMS = {"JORNADA COMPLETA":88,"MEDIA JORNADA":44,"2/3 JORNADA":58,"3/4 JORNADA":66,"TIEMPO PARCIAL":39};
+const DISP = LIMS[JORNADA] || 44;
+const ES_COMPLETA = JORNADA === "JORNADA COMPLETA";
+
+const PROT = {
+  "A":"",
+  "I":"ALTA: Preocupacional + Solicitud ingreso + DNI + Alta temprana AFIP + EDET.",
+  "E":"ENFERMEDAD: Certificado médico con diagnóstico y días de reposo.",
+  "V":"VACACIONES: Notificación firmada con aclaración y DNI.",
+  "ART":"ART: Días 1-10 paga empresa, día 11+ paga ART. Adjuntar denuncia + parte médico + recibo firmado.",
+  "B":"BAJA: Telegrama + Liq.final + Últ.recibo + Art.80 LCT + ANSES PS6.2 + ARDA + Certif.bancaria + Acuse recibo."
+};
+
+function onEstado() {
+  var est = document.getElementById("estado").value;
+  var bFechas = document.getElementById("blk-fechas");
+  var bHoras  = document.getElementById("blk-horas");
+  var prot    = document.getElementById("protocolo");
+  bFechas.style.display = ["E","V","ART","B"].includes(est) ? "block" : "none";
+  bHoras.style.display  = est === "B" ? "none" : "block";
+  prot.textContent = PROT[est] || "";
+  prot.style.display = PROT[est] ? "block" : "none";
+  // Ext/ART
+  var ext1 = document.getElementById("ext1"), ext2 = document.getElementById("ext2");
+  var la1  = document.getElementById("la1"),  la2  = document.getElementById("la2");
+  if (est === "ART") {
+    ext1.disabled = false; ext2.disabled = false;
+    la1.textContent = "Hs ART"; la2.textContent = "Hs ART";
+  } else if (ES_COMPLETA) {
+    ext1.disabled = false; ext2.disabled = false;
+    la1.textContent = "Extras"; la2.textContent = "Extras";
+  } else {
+    ext1.disabled = true; ext2.disabled = true;
+    ext1.value = ""; ext2.value = "";
+    la1.textContent = "N/A"; la2.textContent = "N/A";
+  }
+  // Enf
+  ["enf1","enf2"].forEach(function(id){
+    var el = document.getElementById(id);
+    el.disabled = (est === "A" || est === "V");
+    if (el.disabled) el.value = "";
+  });
+}
+
+function n(id){ var el=document.getElementById(id); return el&&el.value!=""&&!el.disabled?parseFloat(el.value)||0:0; }
+
+function setMsg(id, txt, tipo) {
+  var el = document.getElementById(id);
+  if (!txt) { el.style.display="none"; return; }
+  var colors = {err:"#ffebee;#b71c1c", warn:"#fff8e1;#e65100", info:"#e3f2fd;#1565c0"};
+  var c = colors[tipo].split(";");
+  el.style.background = c[0]; el.style.color = c[1];
+  el.style.border = "1px solid "+c[1];
+  el.textContent = txt; el.style.display = "block";
+}
+
+function chkH() {
+  var est = document.getElementById("estado").value;
+  var sum1 = n("hs1")+n("inas1")+n("enf1")+n("fer1")+n("vac1");
+  var sum2 = n("hs2")+n("inas2")+n("enf2")+n("fer2")+n("vac2");
+  var e1=n("ext1"), e2=n("ext2");
+  var msg1="", tipo1="", msg2="", tipo2="";
+  if(sum1>DISP){msg1="1Q: Suma ("+sum1+"hs) supera disponibles ("+DISP+"hs).";tipo1="err";}
+  else if(ES_COMPLETA&&n("hs1")>88&&e1===0){msg1="1Q: "+n("hs1")+"hs superan 88hs normales. Completá Extras.";tipo1="warn";}
+  else if(sum1>0&&sum1<DISP&&est!=="ART"){msg1="1Q: Faltan "+(DISP-sum1)+"hs — "+JORNADA+" ("+DISP+" disp / "+sum1+" cargadas)";tipo1="info";}
+  if((e1+e2)>30){msg2="Extras: "+(e1+e2)+"hs supera límite legal (30hs/mes).";tipo2="err";}
+  else if(sum2>DISP){msg2="2Q: Suma ("+sum2+"hs) supera disponibles ("+DISP+"hs).";tipo2="err";}
+  else if(ES_COMPLETA&&n("hs2")>88&&e2===0){msg2="2Q: "+n("hs2")+"hs superan 88hs. Completá Extras.";tipo2="warn";}
+  else if(sum2>0&&sum2<DISP&&est!=="ART"){msg2="2Q: Faltan "+(DISP-sum2)+"hs — "+JORNADA+" ("+DISP+" disp / "+sum2+" cargadas)";tipo2="info";}
+  setMsg("wh1",msg1,tipo1); setMsg("wh2",msg2,tipo2);
+}
+
+function showMsg(txt, ok) {
+  var b = document.getElementById("msg-box");
+  b.innerHTML = '<div class="alert alert-'+(ok?'ok':'error')+'">'+txt+'</div>';
+  setTimeout(function(){ b.innerHTML=""; }, 3000);
+}
+
+function guardar() {
+  var btn = document.getElementById("btn-guardar");
+  btn.disabled = true; btn.textContent = "Guardando...";
+  var datos = {
+    empleado_id: {{ empleado.id }},
+    mes: "{{ mes }}", anio: "{{ anio }}",
+    estado: document.getElementById("estado").value,
+    fecha_ini: document.getElementById("fecha_ini").value,
+    fecha_fin: document.getElementById("fecha_fin").value,
+    hs1:n("hs1"),inas1:n("inas1"),enf1:n("enf1"),fer1:n("fer1"),vac1:n("vac1"),ext1:n("ext1"),
+    hs2:n("hs2"),inas2:n("inas2"),enf2:n("enf2"),fer2:n("fer2"),vac2:n("vac2"),ext2:n("ext2"),
+    obs: document.getElementById("obs").value
+  };
+  fetch("{{ url_for('guardar_novedad_route', empresa_id=empresa.id) }}", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(datos)
+  })
+  .then(r=>r.json())
+  .then(function(d){
+    showMsg(d.msg, d.ok);
+    btn.disabled=false; btn.textContent="Guardar";
+  })
+  .catch(function(e){
+    showMsg("Error de conexión",false);
+    btn.disabled=false; btn.textContent="Guardar";
+  });
+}
+
+// Inicializar
+onEstado();
+</script>
+{% endblock %}
