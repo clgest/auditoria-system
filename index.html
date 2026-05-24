@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Solicitud de Ingreso | e-Up RRHH</title>
+<style>
+:root{--bg:#f4f6f8;--paper:#fff;--ink:#1f2937;--muted:#667085;--line:#d0d5dd;--brand:#17365d;--brand2:#244d7c;--soft:#edf4fb;--bad:#b42318;--ok:#067647;--warn:#b54708;--disabled:#f2f4f7;--radius:16px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:16px;line-height:1.42}
+.top{background:var(--brand);color:#fff;padding:12px 14px;position:sticky;top:0;z-index:10;box-shadow:0 2px 12px rgba(0,0,0,.22)}
+.top-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.top h1{font-size:17px;margin:0;font-weight:800}.top small{display:block;opacity:.86;margin-top:2px}
+.wrap{max-width:1100px;margin:0 auto;padding:14px}
+.paper{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 28px rgba(16,24,40,.08);overflow:hidden}
+.doc-head{padding:18px;border-bottom:1px solid var(--line);background:linear-gradient(#fff,#f8fafc)}
+.doc-title{text-align:center;font-size:24px;font-weight:800;letter-spacing:.12em;margin:0 0 8px}
+.req{color:var(--bad);font-weight:900}.hint{font-size:13px;color:var(--muted);margin:4px 0 0}.small{font-size:12px;color:var(--muted)}
+.layout{display:grid;grid-template-columns:250px 1fr;gap:0}
+.nav{border-right:1px solid var(--line);background:#fbfcfe;padding:12px;position:sticky;top:58px;align-self:start;max-height:calc(100vh - 58px);overflow:auto}
+.nav button{display:block;width:100%;text-align:left;border:1px solid transparent;background:transparent;padding:10px;border-radius:10px;font-weight:700;color:#344054;cursor:pointer;margin-bottom:4px}
+.nav button.active{background:var(--brand);color:#fff}.nav button.done{border-color:#abefc6}
+.content{min-width:0}
+.section{display:none;padding:16px}.section.active{display:block}
+h2{font-size:19px;margin:0 0 10px;color:var(--brand)}h3{font-size:16px;margin:14px 0 8px}
+.intro{background:var(--soft);border:1px solid #d8e2ef;border-radius:12px;padding:10px 12px;margin:8px 0 14px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{display:flex;flex-direction:column;gap:5px}.field.full{grid-column:1/-1}
+label{font-size:13px;font-weight:750;color:#344054}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px 12px;font:inherit;background:#fff;color:var(--ink)}
+textarea{min-height:90px;resize:vertical}input:disabled,select:disabled,textarea:disabled{background:var(--disabled);color:#98a2b3}
+.help{font-size:12px;color:var(--muted)}.error{font-size:12px;color:var(--bad);display:none}.invalid{border-color:var(--bad)!important;box-shadow:0 0 0 3px rgba(180,35,24,.08)}
+.choicebar{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.choicebar.three{grid-template-columns:repeat(3,1fr)}
+.choice{border:1px solid var(--line);border-radius:12px;padding:11px;text-align:center;background:#fff;cursor:pointer;font-weight:800}.choice input{display:none}.choice.selected{background:#e8f1fb;border-color:var(--brand);color:var(--brand)}
+.notice{border-radius:12px;padding:10px 12px;margin:10px 0}.notice.warn{background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12}.notice.ok{background:#ecfdf3;border:1px solid #abefc6;color:#05603a}.notice.bad{background:#fef3f2;border:1px solid #fecdca;color:#7a271a}
+.btns{display:flex;gap:8px;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--line);background:#fff;position:sticky;bottom:0;z-index:9}
+.btn{border:0;border-radius:12px;padding:11px 14px;font-weight:850;cursor:pointer;background:var(--brand);color:#fff}.btn.secondary{background:#e5e7eb;color:#111827}.btn.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}.btn.danger{background:#fee4e2;color:#912018}.btn.warn{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}.btn:disabled{opacity:.5;cursor:not-allowed}
+.doc-item,.card{border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0;background:#fff}.doc-line{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.tag{display:inline-block;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:850}.tag.required{background:#fef3f2;color:#b42318}.tag.optional{background:#f2f4f7;color:#475467}.tag.loaded{background:#ecfdf3;color:#067647}.tag.warn{background:#fff7ed;color:#b54708}.tag.lock{background:#eef4ff;color:#3538cd}
+.kv{display:grid;grid-template-columns:190px 1fr;gap:6px 10px;font-size:14px}.kv strong{color:#344054}
+.table{width:100%;border-collapse:collapse;font-size:14px}.table th,.table td{border-bottom:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}.table th{background:#f8fafc;color:#344054}
+.hidden{display:none!important}.center{text-align:center}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+input[type="checkbox"],input[type="radio"]{width:auto;min-width:18px;height:18px;margin:0}
+.checkline{display:flex;align-items:center;gap:10px;line-height:1.35}
+.checkline input{flex:0 0 auto}
+
+@media(max-width:820px){.wrap{padding:8px}.layout{grid-template-columns:1fr}.nav{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line);display:flex;overflow:auto;gap:6px}.nav button{white-space:nowrap;margin:0;width:auto}.grid{grid-template-columns:1fr}.choicebar,.choicebar.three{grid-template-columns:1fr}.doc-title{font-size:20px}.kv{grid-template-columns:1fr}.btns{padding:10px}.btn{flex:1}.top h1{font-size:15px}}
+@media print{body{background:#fff}.top,.nav,.btns,.no-print{display:none!important}.wrap{max-width:none;padding:0}.paper{box-shadow:none;border:0;border-radius:0}.section{display:block;page-break-inside:avoid}.layout{display:block}}
+</style>
+</head>
+<body>
+<div class="top"><div class="top-inner"><div><h1>e-Up RRHH — Solicitud de Ingreso</h1><small>Formulario del postulante</small></div><div class="small">Los campos con <span class="req">*</span> son obligatorios</div></div></div>
+<div class="wrap">
+<form id="form" class="paper" novalidate>
+<div class="doc-head"><div class="doc-title">Solicitud de Ingreso</div><p class="hint center">Complete sus datos y adjunte la documentación solicitada. El Estudio administrará la revisión a través del empleador.</p></div>
+<div class="layout">
+<nav id="nav" class="nav no-print"></nav>
+<main class="content">
+<section class="section active" data-step="0">
+<h2>Solicitud asignada</h2>
+<div class="intro">Esta solicitud fue generada por el Estudio y remitida al empleador. Usted solo debe completar sus datos, adjuntar documentación y aceptar la declaración jurada correspondiente.</div>
+<div class="grid">
+<div class="field"><label>Empleador</label><input name="employer_name" readonly></div>
+<div class="field"><label>CUIT empleador</label><input name="employer_cuit" readonly></div>
+<div class="field"><label>Token de solicitud</label><input name="request_token" readonly></div>
+<div class="field"><label>Estado</label><input name="request_status" value="Formulario iniciado" readonly></div>
+<div class="field"><label>Beneficio configurado por el Estudio</label><input name="benefit_name" readonly></div>
+<div class="field"><label>Requisito configurado</label><input name="benefit_requirement" readonly></div>
+</div>
+</section>
+<section class="section" data-step="1">
+<h2>Datos personales</h2>
+<div class="grid">
+<div class="field"><label>Apellido/s <span class="req">*</span></label><input name="last_names" required></div>
+<div class="field"><label>Nombre/s <span class="req">*</span></label><input name="first_names" required></div>
+<div class="field"><label>Tipo de documento <span class="req">*</span></label><select name="document_type" required><option value="">Seleccione</option><option>DNI</option><option>LE</option><option>LC</option><option>Pasaporte</option><option>Cédula de identidad</option><option>Documento extranjero</option><option>Otro</option></select></div>
+<div class="field"><label>Número de documento <span class="req">*</span></label><input name="document_number" inputmode="numeric" required></div>
+<div class="field"><label>CUIL <span class="req">*</span></label><input name="cuil" inputmode="numeric" maxlength="11" required><div class="help">11 dígitos, sin guiones.</div><div class="error">CUIL inválido.</div></div>
+<div class="field"><label>Fecha de nacimiento <span class="req">*</span></label><input type="date" name="birth_date" required></div>
+<div class="field"><label>Nacionalidad <span class="req">*</span></label><input name="nationality" value="Argentina" required></div>
+<div class="field"><label>Estado civil</label><select name="civil_status"><option value="">Seleccione</option><option>Soltero/a</option><option>Casado/a</option><option>Divorciado/a</option><option>Viudo/a</option><option>Unión convivencial</option><option>Separado/a</option></select></div>
+<div class="field"><label>Nivel de estudios</label><select name="education_level"><option value="">Seleccione</option><option>Sin estudios formales</option><option>Primario incompleto</option><option>Primario completo</option><option>Secundario incompleto</option><option>Secundario completo</option><option>Terciario incompleto</option><option>Terciario completo</option><option>Universitario incompleto</option><option>Universitario completo</option><option>Posgrado</option><option>Otro</option></select></div>
+<div class="field"><label>Profesión u oficio</label><input name="profession"></div>
+<div class="field full"><label>Lugar de nacimiento</label><input name="birth_place" placeholder="Ciudad, provincia, país"></div>
+<div class="field"><label>Email <span class="req">*</span></label><input type="email" name="email" required><div class="help">Necesario para avisos, subsanaciones y constancias.</div></div>
+<div class="field"><label>Teléfono</label><input name="phone" inputmode="tel"></div>
+</div>
+</section>
+<section class="section" data-step="2">
+<h2>Domicilio constituido</h2>
+<div class="grid">
+<div class="field"><label>Calle <span class="req">*</span></label><input name="street" required></div>
+<div class="field"><label>Número <span class="req">*</span></label><input name="street_number" required></div>
+<div class="field"><label>Piso / departamento</label><input name="floor"></div>
+<div class="field"><label>Barrio</label><input name="neighborhood"></div>
+<div class="field"><label>Localidad <span class="req">*</span></label><input name="city" required></div>
+<div class="field"><label>Departamento / partido</label><input name="department"></div>
+<div class="field"><label>Provincia <span class="req">*</span></label><select name="province" required></select></div>
+<div class="field"><label>Código postal</label><input name="postal_code"></div>
+</div>
+</section>
+<section class="section" data-step="3">
+<h2>Situación laboral y previsional</h2>
+<div class="grid">
+<div class="field"><label>CUIT del último empleador</label><input name="last_employer_cuit" inputmode="numeric" maxlength="11"><div class="help">Si lo conoce. 11 dígitos.</div><div class="error">CUIT inválido.</div></div>
+<div class="field"><label>Nombre / razón social del último empleador</label><input name="last_employer_name"></div>
+<div class="field"><label>Fecha aproximada de egreso</label><input type="date" name="last_employer_exit_date"></div>
+<div class="field"><label>Puesto o tarea anterior</label><input name="previous_position"></div>
+<div class="field full"><label>Empleos anteriores / observaciones</label><textarea name="previous_jobs"></textarea></div>
+<div class="field"><label>¿Cobra prestación por desempleo? <span class="req">*</span></label><div class="choicebar" data-radio="unemployment_benefit"><label class="choice"><input type="radio" name="unemployment_benefit" value="Sí" required>Sí</label><label class="choice"><input type="radio" name="unemployment_benefit" value="No">No</label></div></div>
+<div class="field"><label>¿Es jubilado, pensionado, retirado o beneficiario no contributivo? <span class="req">*</span></label><div class="choicebar" data-radio="pension_benefit"><label class="choice"><input type="radio" name="pension_benefit" value="Sí" required>Sí</label><label class="choice"><input type="radio" name="pension_benefit" value="No">No</label></div></div>
+<div class="field"><label>Número de beneficio</label><input name="benefit_number" disabled><div class="help">Se habilita si responde “Sí”.</div></div>
+<div class="field"><label>Obra social declarada / último empleo</label><input name="previous_health_insurance"></div>
+<div class="field"><label>Código obra social, si se conoce</label><input name="previous_health_insurance_code" inputmode="numeric"></div>
+<div class="field"><label>Actividad construcción / libreta fondo de cese laboral <span class="req">*</span></label><div class="choicebar three" data-radio="construction_book"><label class="choice"><input type="radio" name="construction_book" value="Sí" required>Sí</label><label class="choice"><input type="radio" name="construction_book" value="No">No</label><label class="choice"><input type="radio" name="construction_book" value="No corresponde">No corresponde</label></div></div>
+<div class="field"><label>Número de libreta / serie / letra</label><input name="construction_book_detail" disabled><div class="help">Se habilita si responde “Sí”.</div></div>
+<div class="field"><label>¿Tiene incapacidad o discapacidad declarada? <span class="req">*</span></label><div class="choicebar" data-radio="disability"><label class="choice"><input type="radio" name="disability" value="Sí" required>Sí</label><label class="choice"><input type="radio" name="disability" value="No">No</label></div></div>
+<div class="field"><label>Descripción / aclaración</label><input name="disability_description" disabled><div class="help">Se habilita si responde “Sí”.</div></div>
+</div>
+</section>
+<section class="section" data-step="4">
+<h2>Referencias laborales autorizadas</h2>
+<div class="intro">Puede informar referencias laborales para que sean consultadas de manera objetiva y limitada a la evaluación de la incorporación.</div>
+<div id="refs"></div><button type="button" class="btn ghost no-print" id="addRef">Agregar referencia laboral</button>
+</section>
+<section class="section" data-step="5">
+<h2>Cargas de familia</h2>
+<div class="intro">Agregue solo las cargas que correspondan informar para legajo, asignaciones o controles laborales.</div>
+<div id="family"></div><button type="button" class="btn ghost no-print" id="addFamily">Agregar carga de familia</button>
+</section>
+<section class="section" data-step="6">
+<h2>Documentación</h2>
+<div class="intro">Adjunte la documentación requerida. Los ítems obligatorios deben cargarse o, en caso de imposibilidad, justificarse al momento de enviar.</div>
+<div id="docChecklist"></div>
+<div id="pendingWarning" class="notice warn hidden"></div>
+<div class="field full hidden" id="justificationBox"><label>Justificación fundada por documentación faltante</label><textarea name="missing_docs_justification"></textarea></div>
+</section>
+<section class="section" data-step="7">
+<h2>Declaración Jurada y aceptación electrónica</h2>
+<div class="intro" id="declarationBox"></div>
+<div class="grid">
+<div class="field full"><label class="checkline"><input type="checkbox" name="accepted_declaration" required> Leí y acepto la Declaración Jurada <span class="req">*</span></label></div>
+<div class="field full"><label class="checkline"><input type="checkbox" name="accepted_truth" required> Declaro que los datos informados son verdaderos y completos <span class="req">*</span></label></div>
+<div class="field"><label>Para confirmar, escriba nombre y apellido como figura en el DNI <span class="req">*</span></label><input name="accepted_full_name" required></div>
+<div class="field"><label>Confirme su CUIL <span class="req">*</span></label><input name="accepted_cuil" inputmode="numeric" maxlength="11" required></div>
+</div>
+</section>
+<section class="section" data-step="8">
+<h2>Vista previa y envío</h2>
+<div id="preview"></div><div id="finalError" class="notice bad hidden"></div><div id="sending" class="notice warn hidden">Enviando solicitud...</div><div id="finalBox" class="notice ok hidden"></div>
+<button type="button" id="submitBtn" class="btn">Aceptar DDJJ y enviar solicitud</button>
+</section>
+</main>
+</div>
+<div class="btns no-print"><button type="button" id="prevBtn" class="btn secondary">Anterior</button><button type="button" id="resetBtn" class="btn danger">Limpiar</button><button type="button" id="nextBtn" class="btn">Siguiente</button></div>
+</form>
+</div>
+<script>
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxhZ9FJ_Af2eNfbw50wO3m0zWiuc05Sz-ttEiufIxJk1Sl4us1yltktbXE-eUgQ8Gk7/exec";
+const DECLARATION_VERSION = "DDJJ-RRHH-2026-04";
+const DEFAULT_DECLARATION = `Declaro bajo juramento que la información consignada en la presente solicitud es completa, exacta y verdadera, y que mi situación laboral, previsional y/o social declarada es la vigente a la fecha de presentación.
+
+Tomo conocimiento de que dicha información podrá ser utilizada por el empleador y/o por el estudio profesional interviniente para evaluar mi incorporación laboral, gestionar el alta ante los organismos competentes y acreditar, en su caso, el cumplimiento de los requisitos exigidos por regímenes legales de promoción, formalización laboral, reducción de contribuciones u otros beneficios aplicables.
+
+A tales fines, me comprometo a acompañar la documentación respaldatoria que me sea requerida y tomo conocimiento de que la información declarada podrá ser confrontada con constancias emitidas por organismos oficiales o fuentes oficiales disponibles, exclusivamente en la medida necesaria para verificar la procedencia del encuadre legal invocado.
+
+Si la documentación requerida no pudiera ser aportada al momento del envío, tomo conocimiento de que deberá completarse dentro de las 72 horas hábiles o justificarse fundadamente la imposibilidad. La falta de documentación podrá impedir que se dé curso a la incorporación.
+
+La documentación obtenida o aportada será incorporada al legajo laboral y conservada únicamente para acreditar la incorporación, la registración laboral, el cumplimiento de obligaciones legales y la procedencia del beneficio aplicado, bajo deber de confidencialidad.`;
+const PROVINCES=["Buenos Aires","CABA","Catamarca","Chaco","Chubut","Córdoba","Corrientes","Entre Ríos","Formosa","Jujuy","La Pampa","La Rioja","Mendoza","Misiones","Neuquén","Río Negro","Salta","San Juan","San Luis","Santa Cruz","Santa Fe","Santiago del Estero","Tierra del Fuego","Tucumán"];
+const STEPS=["Solicitud","Datos personales","Domicilio","Situación","Referencias","Familia","Documentación","DDJJ","Envío"];
+const HELP_LINKS={cuil:"https://www.argentina.gob.ar/servicio/solicitar-constancia-de-cuil",negative_anses:"https://www.argentina.gob.ar/servicio/obtener-certificacion-negativa-de-anses",labor_history:"https://www.argentina.gob.ar/servicio/consultar-tu-historia-laboral",codem:"https://www.argentina.gob.ar/consultar-tu-obra-social-codem-comprobante-de-empadronamiento"};
+let current=0, family=[], refs=[], docs={}, requestConfig={benefit_required_docs:[],benefit_declaration:"",photo_required:true,benefit_name:"Según solicitud",benefit_requirement:"Según solicitud"};
+const form=document.getElementById("form");
+const qs=s=>document.querySelector(s), qsa=s=>Array.from(document.querySelectorAll(s));
+function digits(v){return String(v||"").replace(/\D/g,"")}
+function cuitOk(v){const s=digits(v);if(s.length!==11)return false;const w=[5,4,3,2,7,6,5,4,3,2];const sum=s.slice(0,10).split("").reduce((a,n,i)=>a+Number(n)*w[i],0);const mod=11-(sum%11);const dv=mod===11?0:mod===10?9:mod;return dv===Number(s[10])}
+function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
+async function sha256(text){const data=new TextEncoder().encode(text);const hash=await crypto.subtle.digest("SHA-256",data);return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,"0")).join("")}
+function fileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
+function val(name){const el=form.elements[name];if(!el)return"";if(el instanceof RadioNodeList)return el.value||"";if(el.type==="checkbox")return el.checked;return el.value||""}
+function setVal(n,v){const el=form.elements[n];if(el)el.value=v||""}
+function init(){qs("#declarationBox").innerHTML="<pre style='white-space:pre-wrap;margin:0;font:inherit'>"+esc(DEFAULT_DECLARATION)+"</pre>";document.querySelector("[name=province]").innerHTML='<option value="">Seleccione</option>'+PROVINCES.map(p=>`<option ${p==="Tucumán"?"selected":""}>${p}</option>`).join("");loadTokenConfig();bind();renderNav();renderFamily();renderRefs();renderDocs();updateConditional()}
+async function loadTokenConfig(){const params=new URLSearchParams(location.search);const token=params.get("token")||"";setVal("request_token",token);if(!token){
+  setVal("employer_name","Solicitud sin token");
+  setVal("employer_cuit","");
+  qs("#declarationBox").innerHTML="<pre style='white-space:pre-wrap;margin:0;font:inherit'>"+esc(DEFAULT_DECLARATION)+"</pre>";
+  renderDocs();
+  return;
+}
+try{if(!APPS_SCRIPT_URL.includes("PEGAR_AQUI")){const r=await fetch(APPS_SCRIPT_URL+"?action=getRequestByToken&token="+encodeURIComponent(token));const j=await r.json();if(j.ok&&j.request){applyConfig(j.request);return}}}catch(e){}
+applyConfig({token,employer_name:params.get("ename")||"Empleador asignado",employer_cuit:params.get("ecuit")||"",benefit_name:params.get("benefit")||"Según solicitud",benefit_requirement:params.get("req")||"Según solicitud",photo_required:true})}
+function applyConfig(c){requestConfig={...requestConfig,...c};setVal("employer_name",c.employer_name);setVal("employer_cuit",digits(c.employer_cuit));setVal("benefit_name",c.benefit_name||"");setVal("benefit_requirement",c.benefit_requirement||"");qs("#declarationBox").innerHTML="<pre style='white-space:pre-wrap;margin:0;font:inherit'>"+esc(c.benefit_declaration||DEFAULT_DECLARATION)+"</pre>";renderDocs()}
+function renderNav(){qs("#nav").innerHTML=STEPS.map((s,i)=>`<button type="button" class="${i===current?'active':''}" data-jump="${i}">${i+1}. ${s}</button>`).join("");qsa("[data-jump]").forEach(b=>b.onclick=()=>{current=Number(b.dataset.jump);renderSection();})}
+function renderSection(){qsa(".section").forEach((s,i)=>s.classList.toggle("active",i===current));qs("#prevBtn").disabled=current===0;qs("#nextBtn").classList.toggle("hidden",current===8);if(current===6)renderDocs();if(current===8)renderPreview();renderNav();scrollTo(0,0)}
+function bind(){qsa("[data-radio]").forEach(g=>g.addEventListener("click",e=>{const l=e.target.closest(".choice");if(!l)return;const input=l.querySelector("input");input.checked=true;g.querySelectorAll(".choice").forEach(x=>x.classList.remove("selected"));l.classList.add("selected");updateConditional()}));form.addEventListener("input",updateConditional);qs("#prevBtn").onclick=()=>{if(current>0){current--;renderSection()}};qs("#nextBtn").onclick=()=>{if(validateCurrent()){current++;renderSection()}};qs("#resetBtn").onclick=()=>{if(confirm("¿Limpiar formulario?"))location.reload()};qs("#addFamily").onclick=()=>{family.push({relationship:"Hijo/a",name:"",birth_date:"",dni:"",studies:"No"});renderFamily();renderDocs()};qs("#addRef").onclick=()=>{refs.push({employer_cuit:"",employer_name:"",contact_name:"",contact_role:"",contact_email:"",contact_phone:"",period:"",position:"",authorized:"Sí"});renderRefs()};qs("#submitBtn").onclick=submit}
+function updateConditional(){const pension=val("pension_benefit")==="Sí";form.elements.benefit_number.disabled=!pension;if(!pension)form.elements.benefit_number.value="";const cons=val("construction_book")==="Sí";form.elements.construction_book_detail.disabled=!cons;if(!cons)form.elements.construction_book_detail.value="";const dis=val("disability")==="Sí";form.elements.disability_description.disabled=!dis;if(!dis)form.elements.disability_description.value="";renderDocs()}
+
+function validateNoRepeatedIdentifiers(){
+  const items = [];
+  const add = (value,label,group,selector) => {
+    const v = digits(value);
+    if(v) items.push({value:v,label,group,selector});
+  };
+  add(val("employer_cuit"),"CUIT empleador","employer","[name=employer_cuit]");
+  add(val("cuil"),"CUIL postulante","applicant","[name=cuil]");
+  add(val("accepted_cuil"),"CUIL confirmación DDJJ","applicant","[name=accepted_cuil]");
+  add(val("last_employer_cuit"),"CUIT último empleador","last_employer","[name=last_employer_cuit]");
+  refs.forEach((r,i)=>add(r.employer_cuit,"CUIT referencia laboral " + (i+1),"reference_"+i,`[data-ref="employer_cuit"][data-i="${i}"]`));
+
+  const seen = {};
+  for(const it of items){
+    if(!seen[it.value]) seen[it.value] = [];
+    seen[it.value].push(it);
+  }
+
+  for(const value of Object.keys(seen)){
+    const groups = Array.from(new Set(seen[value].map(x=>x.group)));
+    const allowedOnlyApplicant = groups.length === 1 && groups[0] === "applicant";
+    if(!allowedOnlyApplicant && seen[value].length > 1){
+      seen[value].forEach(x=>{
+        const el = document.querySelector(x.selector);
+        if(el) el.classList.add("invalid");
+      });
+      alert("Hay CUIT/CUIL repetidos: " + value + ". Solo se admite repetir el CUIL del postulante en la confirmación de la DDJJ.");
+      return false;
+    }
+  }
+  return true;
+}
+
+function validateCurrent(){const sec=qsa(".section")[current];qsa(".invalid").forEach(x=>x.classList.remove("invalid"));if(!validateNoRepeatedIdentifiers())return false;for(const el of sec.querySelectorAll("[required]")){if(el.type==="radio"){if(!form.elements[el.name].value){alert("Complete las opciones obligatorias.");return false}}else if(el.type==="checkbox"){if(!el.checked){alert("Debe aceptar los campos obligatorios.");return false}}else if(!String(el.value||"").trim()){el.classList.add("invalid");el.focus();return false}}if(current===1&&!cuitOk(val("cuil"))){form.elements.cuil.classList.add("invalid");alert("CUIL inválido.");return false}if(current===3&&val("last_employer_cuit")&&!cuitOk(val("last_employer_cuit"))){form.elements.last_employer_cuit.classList.add("invalid");alert("CUIT del último empleador inválido.");return false}if(current===7&&(!cuitOk(val("accepted_cuil"))||digits(val("accepted_cuil"))!==digits(val("cuil")))){form.elements.accepted_cuil.classList.add("invalid");alert("El CUIL de confirmación debe coincidir con el CUIL informado.");return false}return true}
+function renderFamily(){qs("#family").innerHTML=family.length?family.map((f,i)=>`<div class="card"><div class="grid"><div class="field"><label>Parentesco</label><select data-fam="relationship" data-i="${i}">${["Cónyuge","Conviviente","Hijo/a","Padre","Madre","Hermano/a","Otro"].map(r=>`<option ${f.relationship===r?'selected':''}>${r}</option>`).join("")}</select></div><div class="field"><label>Nombre y apellido</label><input data-fam="name" data-i="${i}" value="${esc(f.name)}"></div><div class="field"><label>Fecha nacimiento</label><input type="date" data-fam="birth_date" data-i="${i}" value="${esc(f.birth_date)}"></div><div class="field"><label>DNI</label><input data-fam="dni" data-i="${i}" value="${esc(f.dni)}"></div><div class="field"><label>Cursa estudios</label><select data-fam="studies" data-i="${i}"><option>No</option><option ${f.studies==="Sí"?'selected':''}>Sí</option><option ${f.studies==="No corresponde"?'selected':''}>No corresponde</option></select></div><div class="field"><label>&nbsp;</label><button type="button" class="btn danger" onclick="removeFamily(${i})">Eliminar</button></div></div></div>`).join(""):'<div class="intro">Sin cargas de familia informadas.</div>';qsa("[data-fam]").forEach(el=>el.oninput=()=>{family[Number(el.dataset.i)][el.dataset.fam]=el.value;renderDocs()})}
+function renderRefs(){qs("#refs").innerHTML=refs.length?refs.map((r,i)=>`<div class="card"><div class="grid"><div class="field"><label>CUIT empleador anterior</label><input data-ref="employer_cuit" data-i="${i}" maxlength="11" value="${esc(r.employer_cuit)}"></div><div class="field"><label>Nombre / razón social</label><input data-ref="employer_name" data-i="${i}" value="${esc(r.employer_name)}"></div><div class="field"><label>Persona de contacto</label><input data-ref="contact_name" data-i="${i}" value="${esc(r.contact_name)}"></div><div class="field"><label>Cargo del contacto</label><input data-ref="contact_role" data-i="${i}" value="${esc(r.contact_role)}"></div><div class="field"><label>Email</label><input data-ref="contact_email" data-i="${i}" value="${esc(r.contact_email)}"></div><div class="field"><label>Teléfono</label><input data-ref="contact_phone" data-i="${i}" value="${esc(r.contact_phone)}"></div><div class="field"><label>Período trabajado</label><input data-ref="period" data-i="${i}" value="${esc(r.period)}"></div><div class="field"><label>Puesto desempeñado</label><input data-ref="position" data-i="${i}" value="${esc(r.position)}"></div><div class="field full"><label>Autoriza consulta objetiva de referencia laboral</label><select data-ref="authorized" data-i="${i}"><option ${r.authorized==="Sí"?'selected':''}>Sí</option><option ${r.authorized==="No"?'selected':''}>No</option></select></div><div class="field"><button type="button" class="btn danger" onclick="removeRef(${i})">Eliminar</button></div></div></div>`).join(""):'<div class="intro">Sin referencias laborales informadas.</div>';qsa("[data-ref]").forEach(el=>el.oninput=()=>{refs[Number(el.dataset.i)][el.dataset.ref]=el.value})}
+window.removeFamily=i=>{family.splice(i,1);renderFamily();renderDocs()};window.removeRef=i=>{refs.splice(i,1);renderRefs()};
+function baseDocs(){let l=[{id:"photo",label:"Foto / imagen del postulante",required:!!requestConfig.photo_required,help:null},{id:"dni_front",label:"DNI frente",required:true},{id:"dni_back",label:"DNI dorso",required:true},{id:"cuil_certificate",label:"Constancia de CUIL",required:true,help:"cuil"},{id:"codem",label:"CODEM / Obra Social",required:true,help:"codem"},{id:"negative_anses",label:"Certificación Negativa ANSES",required:true,help:"negative_anses"},{id:"labor_history",label:"Historia Laboral ANSES",required:true,help:"labor_history"}];(requestConfig.benefit_required_docs||[]).forEach(x=>l.push({...x,required:x.required!==false}));if(val("disability")==="Sí")l.push({id:"disability_certificate",label:"Certificado de discapacidad/incapacidad vigente",required:true});if(val("construction_book")==="Sí")l.push({id:"construction_book_file",label:"Libreta Fondo de Cese Laboral / constancia",required:true});if(family.length)l.push({id:"family_docs",label:"Documentación de cargas de familia",required:true});const seen=new Set();return l.filter(d=>{if(seen.has(d.id))return false;seen.add(d.id);return true})}
+function renderDocs(){const list=baseDocs();qs("#docChecklist").innerHTML=list.map(d=>{const loaded=docs[d.id]?.filename;return `<div class="doc-item"><div class="doc-line"><div><strong>${esc(d.label)}</strong> ${d.required?'<span class="tag required">obligatorio</span>':'<span class="tag optional">opcional</span>'} ${loaded?'<span class="tag loaded">cargado</span>':'<span class="tag warn">pendiente</span>'}<div class="help">${loaded?esc(docs[d.id].filename):'Debe subir archivo o tomar foto.'}</div>${d.help?`<div><a target="_blank" href="${HELP_LINKS[d.help]}">Cómo obtenerlo</a></div>`:''}</div><label class="btn ghost" style="margin:0;cursor:pointer">Subir / tomar foto<input type="file" accept=".pdf,image/*" capture="environment" data-docid="${d.id}" hidden></label></div></div>`}).join("");qsa("[data-docid]").forEach(inp=>inp.onchange=async e=>{const file=e.target.files[0];if(!file)return;const b64=await fileToBase64(file);docs[inp.dataset.docid]={type:(baseDocs().find(d=>d.id===inp.dataset.docid)||{}).label||inp.dataset.docid,filename:file.name,mimeType:file.type||"application/octet-stream",base64:b64.split(",")[1],required:(baseDocs().find(d=>d.id===inp.dataset.docid)||{}).required};renderDocs()})}
+function missingDocs(){return baseDocs().filter(d=>d.required&&!docs[d.id]?.filename)}
+function collect(){const fd=new FormData(form),data={};fd.forEach((v,k)=>data[k]=v);data.employer_cuit=digits(data.employer_cuit);data.cuil=digits(data.cuil);data.accepted_cuil=digits(data.accepted_cuil);data.last_employer_cuit=digits(data.last_employer_cuit);data.family=family;data.references=refs;data.documents=Object.values(docs);data.missing_documents=missingDocs().map(d=>d.label);data.status=data.missing_documents.length?"submitted_pending_documents":"submitted_complete";data.declaration_version=DECLARATION_VERSION;data.declaration_text=requestConfig.benefit_declaration||DEFAULT_DECLARATION;data.client_timestamp=new Date().toISOString();data.user_agent=navigator.userAgent;data.page_url=location.href;return data}
+function renderPreview(){const d=collect(),miss=missingDocs();qs("#preview").innerHTML=`<div class="card"><h3>Empleador</h3><div class="kv"><strong>CUIT</strong><span>${esc(d.employer_cuit)}</span><strong>Nombre</strong><span>${esc(d.employer_name)}</span><strong>Beneficio</strong><span>${esc(d.benefit_name)}</span></div></div><div class="card"><h3>Postulante</h3><div class="kv"><strong>Nombre</strong><span>${esc(d.last_names)}, ${esc(d.first_names)}</span><strong>Documento</strong><span>${esc(d.document_type)} ${esc(d.document_number)}</span><strong>CUIL</strong><span>${esc(d.cuil)}</span><strong>Email</strong><span>${esc(d.email)}</span></div></div><div class="card"><h3>Documentación</h3>${baseDocs().map(x=>`• ${esc(x.label)}: ${docs[x.id]?.filename?'cargado':'pendiente'}`).join("<br>")}</div>${miss.length?`<div class="notice warn">Falta documentación obligatoria: ${miss.map(x=>esc(x.label)).join(", ")}. Puede volver a cargarla o enviar la solicitud como pendiente con justificación fundada.</div><button type="button" class="btn ghost" onclick="goDocs()">Volver a cargar documentación</button> <button type="button" class="btn warn" onclick="allowPending()">Enviar como pendiente y justificar</button>`:''}`}
+window.goDocs=()=>{current=6;renderSection()};window.allowPending=()=>{qs("#justificationBox").classList.remove("hidden");current=6;renderSection();setTimeout(()=>form.elements.missing_docs_justification.focus(),100)}
+async function submit(){const err=qs("#finalError"),ok=qs("#finalBox"),sending=qs("#sending");err.classList.add("hidden");ok.classList.add("hidden");if(APPS_SCRIPT_URL.includes("PEGAR_AQUI")){err.textContent="Falta configurar la URL de Apps Script en index.html.";err.classList.remove("hidden");return}if(!validateCurrent())return;if(!validateNoRepeatedIdentifiers())return;const miss=missingDocs();if(miss.length&&!val("missing_docs_justification")){err.textContent="Falta documentación obligatoria. Debe cargarla o justificar fundadamente la imposibilidad antes de enviar como pendiente.";err.classList.remove("hidden");return}const data=collect();data.payload_hash=await sha256(JSON.stringify({...data,documents:data.documents.map(x=>({type:x.type,filename:x.filename,required:x.required}))}));data.declaration_text_hash=await sha256(data.declaration_text);sending.classList.remove("hidden");try{const r=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"submitApplication",payload:data})});const txt=await r.text();let j;try{j=JSON.parse(txt)}catch{j={ok:true,message:txt}}if(!j.ok)throw new Error(j.error||"Error al guardar");ok.innerHTML=`Solicitud enviada.<br><strong>Número:</strong> ${esc(j.request_id||"registrado")}<br>${j.pdf_url?`<a target="_blank" href="${j.pdf_url}">Abrir PDF generado</a>`:""}`;ok.classList.remove("hidden")}catch(ex){err.textContent="No se pudo enviar: "+ex.message;err.classList.remove("hidden")}finally{sending.classList.add("hidden")}}
+init();
+</script>
+</body></html>
