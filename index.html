@@ -33,7 +33,7 @@ textarea{min-height:90px;resize:vertical}input:disabled,select:disabled,textarea
 .notice{border-radius:12px;padding:10px 12px;margin:10px 0}.notice.warn{background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12}.notice.ok{background:#ecfdf3;border:1px solid #abefc6;color:#05603a}.notice.bad{background:#fef3f2;border:1px solid #fecdca;color:#7a271a}
 .btns{display:flex;gap:8px;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--line);background:#fff;position:sticky;bottom:0;z-index:9}
 .btn{border:0;border-radius:12px;padding:11px 14px;font-weight:850;cursor:pointer;background:var(--brand);color:#fff}.btn.secondary{background:#e5e7eb;color:#111827}.btn.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}.btn.danger{background:#fee4e2;color:#912018}.btn.warn{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}.btn:disabled{opacity:.5;cursor:not-allowed}
-.doc-item,.card{border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0;background:#fff}.doc-line{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.doc-item,.card{border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0;background:#fff}.card p{margin:6px 0}.doc-line{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
 .tag{display:inline-block;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:850}.tag.required{background:#fef3f2;color:#b42318}.tag.optional{background:#f2f4f7;color:#475467}.tag.loaded{background:#ecfdf3;color:#067647}.tag.warn{background:#fff7ed;color:#b54708}.tag.lock{background:#eef4ff;color:#3538cd}
 .kv{display:grid;grid-template-columns:190px 1fr;gap:6px 10px;font-size:14px}.kv strong{color:#344054}
 .table{width:100%;border-collapse:collapse;font-size:14px}.table th,.table td{border-bottom:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}.table th{background:#f8fafc;color:#344054}
@@ -57,14 +57,34 @@ input[type="checkbox"],input[type="radio"]{width:auto;min-width:18px;height:18px
 <main class="content">
 <section class="section active" data-step="0">
 <h2>Solicitud asignada</h2>
-<div class="intro">Esta solicitud fue generada por el Estudio y remitida al empleador. Usted solo debe completar sus datos, adjuntar documentación y aceptar la declaración jurada correspondiente.</div>
+<div class="intro">
+Esta solicitud fue generada por el Estudio y remitida al empleador. Usted solo debe completar sus datos, adjuntar documentación y aceptar la declaración jurada correspondiente.
+</div>
+
+<input type="hidden" name="request_token">
+<input type="hidden" name="benefit_name">
+<input type="hidden" name="benefit_requirement">
+
 <div class="grid">
 <div class="field"><label>Empleador</label><input name="employer_name" readonly></div>
 <div class="field"><label>CUIT empleador</label><input name="employer_cuit" readonly></div>
-<div class="field"><label>Token de solicitud</label><input name="request_token" readonly></div>
+<div class="field"><label>N° de solicitud</label><input name="request_number" readonly></div>
 <div class="field"><label>Estado</label><input name="request_status" value="Formulario iniciado" readonly></div>
-<div class="field"><label>Beneficio configurado por el Estudio</label><input name="benefit_name" readonly></div>
-<div class="field"><label>Requisito configurado</label><input name="benefit_requirement" readonly></div>
+</div>
+
+<div class="card">
+<h3>Información del trámite</h3>
+<p>El empleador solicitó evaluar la aplicación de un beneficio legal vinculado a la incorporación laboral.</p>
+<p>Por ese motivo, se requiere que usted declare datos verdaderos y acompañe documentación respaldatoria sobre su situación laboral y previsional anterior.</p>
+<p>Usted no decide la aplicación del beneficio. Su intervención consiste en declarar la información solicitada y adjuntar los comprobantes requeridos. La procedencia final será evaluada por el Estudio y el empleador conforme la normativa aplicable.</p>
+</div>
+
+<div class="card" id="benefitInfoBox">
+<h3>Beneficio informado por el Estudio</h3>
+<div class="kv">
+<strong>Beneficio</strong><span id="benefitInfoName">Según solicitud</span>
+<strong>Requisito a acreditar</strong><span id="benefitInfoRequirement">Según solicitud</span>
+</div>
 </div>
 </section>
 <section class="section" data-step="1">
@@ -155,7 +175,7 @@ input[type="checkbox"],input[type="radio"]{width:auto;min-width:18px;height:18px
 </form>
 </div>
 <script>
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxhZ9FJ_Af2eNfbw50wO3m0zWiuc05Sz-ttEiufIxJk1Sl4us1yltktbXE-eUgQ8Gk7/exec";
+const APPS_SCRIPT_URL = "PEGAR_AQUI_LA_URL_DE_APPS_SCRIPT_WEB_APP_EXEC";
 const DECLARATION_VERSION = "DDJJ-RRHH-2026-04";
 const DEFAULT_DECLARATION = `Declaro bajo juramento que la información consignada en la presente solicitud es completa, exacta y verdadera, y que mi situación laboral, previsional y/o social declarada es la vigente a la fecha de presentación.
 
@@ -183,13 +203,29 @@ function init(){qs("#declarationBox").innerHTML="<pre style='white-space:pre-wra
 async function loadTokenConfig(){const params=new URLSearchParams(location.search);const token=params.get("token")||"";setVal("request_token",token);if(!token){
   setVal("employer_name","Solicitud sin token");
   setVal("employer_cuit","");
+  setVal("request_number","Sin token");
+  setVal("benefit_name","Según solicitud");
+  setVal("benefit_requirement","Según solicitud");
+  qs("#benefitInfoName").textContent = "Según solicitud";
+  qs("#benefitInfoRequirement").textContent = "Según solicitud";
   qs("#declarationBox").innerHTML="<pre style='white-space:pre-wrap;margin:0;font:inherit'>"+esc(DEFAULT_DECLARATION)+"</pre>";
   renderDocs();
   return;
 }
 try{if(!APPS_SCRIPT_URL.includes("PEGAR_AQUI")){const r=await fetch(APPS_SCRIPT_URL+"?action=getRequestByToken&token="+encodeURIComponent(token));const j=await r.json();if(j.ok&&j.request){applyConfig(j.request);return}}}catch(e){}
 applyConfig({token,employer_name:params.get("ename")||"Empleador asignado",employer_cuit:params.get("ecuit")||"",benefit_name:params.get("benefit")||"Según solicitud",benefit_requirement:params.get("req")||"Según solicitud",photo_required:true})}
-function applyConfig(c){requestConfig={...requestConfig,...c};setVal("employer_name",c.employer_name);setVal("employer_cuit",digits(c.employer_cuit));setVal("benefit_name",c.benefit_name||"");setVal("benefit_requirement",c.benefit_requirement||"");qs("#declarationBox").innerHTML="<pre style='white-space:pre-wrap;margin:0;font:inherit'>"+esc(c.benefit_declaration||DEFAULT_DECLARATION)+"</pre>";renderDocs()}
+function applyConfig(c){
+  requestConfig={...requestConfig,...c};
+  setVal("employer_name",c.employer_name);
+  setVal("employer_cuit",digits(c.employer_cuit));
+  setVal("request_number",c.request_id || (c.token ? ("Token " + String(c.token).slice(-6)) : "A confirmar"));
+  setVal("benefit_name",c.benefit_name||"");
+  setVal("benefit_requirement",c.benefit_requirement||"");
+  qs("#benefitInfoName").textContent = c.benefit_name || "Según solicitud";
+  qs("#benefitInfoRequirement").textContent = c.benefit_requirement || "Según solicitud";
+  qs("#declarationBox").innerHTML="<pre style='white-space:pre-wrap;margin:0;font:inherit'>"+esc(c.benefit_declaration||DEFAULT_DECLARATION)+"</pre>";
+  renderDocs();
+}
 function renderNav(){qs("#nav").innerHTML=STEPS.map((s,i)=>`<button type="button" class="${i===current?'active':''}" data-jump="${i}">${i+1}. ${s}</button>`).join("");qsa("[data-jump]").forEach(b=>b.onclick=()=>{current=Number(b.dataset.jump);renderSection();})}
 function renderSection(){qsa(".section").forEach((s,i)=>s.classList.toggle("active",i===current));qs("#prevBtn").disabled=current===0;qs("#nextBtn").classList.toggle("hidden",current===8);if(current===6)renderDocs();if(current===8)renderPreview();renderNav();scrollTo(0,0)}
 function bind(){qsa("[data-radio]").forEach(g=>g.addEventListener("click",e=>{const l=e.target.closest(".choice");if(!l)return;const input=l.querySelector("input");input.checked=true;g.querySelectorAll(".choice").forEach(x=>x.classList.remove("selected"));l.classList.add("selected");updateConditional()}));form.addEventListener("input",updateConditional);qs("#prevBtn").onclick=()=>{if(current>0){current--;renderSection()}};qs("#nextBtn").onclick=()=>{if(validateCurrent()){current++;renderSection()}};qs("#resetBtn").onclick=()=>{if(confirm("¿Limpiar formulario?"))location.reload()};qs("#addFamily").onclick=()=>{family.push({relationship:"Hijo/a",name:"",birth_date:"",dni:"",studies:"No"});renderFamily();renderDocs()};qs("#addRef").onclick=()=>{refs.push({employer_cuit:"",employer_name:"",contact_name:"",contact_role:"",contact_email:"",contact_phone:"",period:"",position:"",authorized:"Sí"});renderRefs()};qs("#submitBtn").onclick=submit}
