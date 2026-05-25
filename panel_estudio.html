@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- e-Up RRHH Panel del Estudio | VERSION v10.0.0 | 2026-05-24 -->
+<!-- e-Up RRHH Panel del Estudio | VERSION v12.0.0 | 2026-05-24 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -44,12 +44,38 @@ input[type="checkbox"],input[type="radio"]{width:auto;min-width:18px;height:18px
 .checkline{display:flex;align-items:center;gap:10px;line-height:1.35}
 .checkline input{flex:0 0 auto}
 
+
+.view-toggle{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.view-toggle button{border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;cursor:pointer}
+.view-toggle button.active{background:#fff;color:#17365d}
+body.force-mobile .wrap{max-width:480px}
+body.force-mobile .layout{grid-template-columns:1fr}
+body.force-mobile .nav{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line);display:flex;overflow:auto;gap:6px}
+body.force-mobile .nav button{white-space:nowrap;margin:0;width:auto}
+body.force-mobile .grid{grid-template-columns:1fr}
+body.force-mobile .choicebar,body.force-mobile .choicebar.three{grid-template-columns:1fr}
+body.force-mobile .kv{grid-template-columns:1fr}
+body.force-mobile .doc-title{font-size:20px}
+body.force-desktop .wrap{max-width:1100px}
+body.force-desktop .layout{grid-template-columns:250px 1fr}
+body.force-desktop .nav{border-right:1px solid var(--line);border-bottom:0;position:sticky;top:58px;display:block;max-height:calc(100vh - 58px)}
+body.force-desktop .nav button{white-space:normal;width:100%;margin-bottom:4px}
+body.force-desktop .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.force-desktop .choicebar{grid-template-columns:repeat(2,1fr)}
+body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
+
 @media(max-width:820px){.wrap{padding:8px}.layout{grid-template-columns:1fr}.nav{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line);display:flex;overflow:auto;gap:6px}.nav button{white-space:nowrap;margin:0;width:auto}.grid{grid-template-columns:1fr}.choicebar,.choicebar.three{grid-template-columns:1fr}.doc-title{font-size:20px}.kv{grid-template-columns:1fr}.btns{padding:10px}.btn{flex:1}.top h1{font-size:15px}}
 @media print{body{background:#fff}.top,.nav,.btns,.no-print{display:none!important}.wrap{max-width:none;padding:0}.paper{box-shadow:none;border:0;border-radius:0}.section{display:block;page-break-inside:avoid}.layout{display:block}}
 </style>
 </head>
 <body>
-<div class="top"><div class="top-inner"><div><h1>e-Up RRHH — Panel del Estudio</h1><small>Inicio, seguimiento y cierre de altas</small></div><div class="small">El Estudio inicia y cierra el proceso <span class="version-badge">Panel v10.0.0</span></div></div></div>
+<div class="top"><div class="top-inner"><div><h1>e-Up RRHH — Panel del Estudio</h1><small>Inicio, seguimiento y cierre de altas</small></div><div class="small">
+  <div class="view-toggle no-print">
+    <button type="button" id="viewModeDesktop">Vista escritorio</button>
+    <button type="button" id="viewModeMobile">Vista celular</button>
+  </div>
+  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v12.0.0</span>
+</div></div></div>
 <div class="wrap"><div class="paper">
 <div class="doc-head"><div class="doc-title">Panel del Estudio</div><p class="hint center">Crear solicitud, seleccionar beneficio, generar token, enviar mail al empleador, controlar estado y cerrar trámite.</p></div>
 <div class="layout"><nav id="nav" class="nav"></nav><main class="content">
@@ -81,6 +107,10 @@ input[type="checkbox"],input[type="radio"]{width:auto;min-width:18px;height:18px
 <div class="grid">
 <div class="field"><label>Beneficio</label><select id="benefit_id"></select></div>
 <div class="field"><label>Estado normativo</label><input id="benefit_status" readonly></div>
+<div class="field"><label>Inicio vigencia</label><input id="benefit_start" type="date"></div>
+<div class="field"><label>Fin vigencia / vencimiento</label><input id="benefit_end" type="date"></div>
+<div class="field"><label>Días alerta previa</label><input id="benefit_alert_days" type="number" min="1" value="30"></div>
+<div class="field"><label>Alerta de vigencia</label><input id="benefit_alert" readonly></div>
 <div class="field full"><label>Descripción / requisitos</label><textarea id="benefit_description" readonly></textarea></div>
 <div class="field full"><label>Documentación requerida por beneficio</label><textarea id="benefit_docs" readonly></textarea></div>
 <div class="field full"><label>Advertencia de riesgo</label><textarea id="benefit_risk" readonly></textarea></div>
@@ -129,15 +159,15 @@ input[type="checkbox"],input[type="radio"]{width:auto;min-width:18px;height:18px
 </section>
 </main></div></div></div>
 <script>
-const APP_VERSION = "v10.0.0";
+const APP_VERSION = "v12.0.0";
 const APP_BUILD_DATE = "2026-05-24";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxhZ9FJ_Af2eNfbw50wO3m0zWiuc05Sz-ttEiufIxJk1Sl4us1yltktbXE-eUgQ8Gk7/exec";
 const FORM_URL = "https://clgest.github.io/auditoria-system/";
 const SECTIONS=["Dashboard","Cliente","Beneficio","Crear link","Lote de altas","Recordatorios","Cierre"];
 const BENEFITS=[
-{id:"none",name:"Ninguno",status:"operativo",description:"Alta sin beneficio especial.",docs:"Documentación estándar.",risk:"Sin reducción especial."},
-{id:"rifl_desocupacion",name:"RIFL - Ley 27.802 - desocupación mínima seis meses",status:"operativo",description:"Requiere acreditar condición de desocupación mínima de seis meses previos al alta laboral, según encuadre definido por el Estudio.",docs:"Certificación Negativa ANSES; Historia Laboral ANSES; DDJJ específica.",risk:"Si no se acredita el requisito puede decaer el beneficio y corresponder ingreso de contribuciones, intereses y sanciones."},
-{id:"beneficio_pendiente",name:"Otro beneficio pendiente de reglamentación",status:"pendiente de reglamentación",description:"Beneficio cargado para análisis. No debe aplicarse automáticamente hasta habilitación expresa del Estudio.",docs:"A definir por normativa/reglamentación.",risk:"No operativo. Requiere validación normativa antes de aplicar."}
+{id:"none",name:"Ninguno",status:"operativo",inicio_vigencia:"",fin_vigencia:"",dias_alerta_previa:"",description:"Alta sin beneficio especial.",docs:"Documentación estándar.",risk:"Sin reducción especial."},
+{id:"rifl_desocupacion",name:"RIFL - Ley 27.802 - desocupación mínima seis meses",status:"operativo",inicio_vigencia:"",fin_vigencia:"",dias_alerta_previa:"30",description:"Requiere acreditar condición de desocupación mínima de seis meses previos al alta laboral, según encuadre definido por el Estudio.",docs:"Certificación Negativa ANSES; Historia Laboral ANSES; DDJJ específica.",risk:"Si no se acredita el requisito puede decaer el beneficio y corresponder ingreso de contribuciones, intereses y sanciones."},
+{id:"beneficio_pendiente",name:"Otro beneficio pendiente de reglamentación",status:"pendiente de reglamentación",inicio_vigencia:"",fin_vigencia:"",dias_alerta_previa:"",description:"Beneficio cargado para análisis. No debe aplicarse automáticamente hasta habilitación expresa del Estudio.",docs:"A definir por normativa/reglamentación.",risk:"No operativo. Requiere validación normativa antes de aplicar."}
 ];
 let current=0;
 const qs=s=>document.querySelector(s), qsa=s=>Array.from(document.querySelectorAll(s));
@@ -148,9 +178,60 @@ function randomToken(){const arr=new Uint8Array(18);crypto.getRandomValues(arr);
 function init(){qs("#benefit_id").innerHTML=BENEFITS.map(b=>`<option value="${b.id}">${b.name}</option>`).join("");qs("#benefit_id").onchange=renderBenefit;renderBenefit();renderNav();bind();loadDashboard()}
 function renderNav(){qs("#nav").innerHTML=SECTIONS.map((s,i)=>`<button type="button" class="${i===current?'active':''}" data-j="${i}">${s}</button>`).join("");qsa("[data-j]").forEach(b=>b.onclick=()=>{current=Number(b.dataset.j);renderSection()})}
 function renderSection(){qsa(".section").forEach((s,i)=>s.classList.toggle("active",i===current));renderNav()}
-function renderBenefit(){const b=BENEFITS.find(x=>x.id===qs("#benefit_id").value)||BENEFITS[0];qs("#benefit_status").value=b.status;qs("#benefit_description").value=b.description;qs("#benefit_docs").value=b.docs;qs("#benefit_risk").value=b.risk}
+function renderBenefit(){
+  const b=BENEFITS.find(x=>x.id===qs("#benefit_id").value)||BENEFITS[0];
+  qs("#benefit_status").value=b.status;
+  qs("#benefit_start").value=b.inicio_vigencia || "";
+  qs("#benefit_end").value=b.fin_vigencia || "";
+  qs("#benefit_alert_days").value=b.dias_alerta_previa || "30";
+  qs("#benefit_description").value=b.description;
+  qs("#benefit_docs").value=b.docs;
+  qs("#benefit_risk").value=b.risk;
+  updateBenefitAlert();
+}
+
+function updateBenefitAlert(){
+  const status = String(qs("#benefit_status").value || "").toLowerCase();
+  const end = qs("#benefit_end").value;
+  const days = Number(qs("#benefit_alert_days").value || 30);
+
+  if(status.includes("pendiente")){
+    qs("#benefit_alert").value = "Pendiente de reglamentación";
+    return;
+  }
+  if(status.includes("no operativo") || status.includes("suspendido")){
+    qs("#benefit_alert").value = "No operativo";
+    return;
+  }
+  if(!end){
+    qs("#benefit_alert").value = "Sin fecha de fin cargada";
+    return;
+  }
+
+  const today = new Date();
+  const endDate = new Date(end + "T23:59:59");
+  const diff = Math.ceil((endDate.getTime() - today.getTime()) / 86400000);
+  if(diff < 0) qs("#benefit_alert").value = "Beneficio vencido";
+  else if(diff <= days) qs("#benefit_alert").value = "Próximo a vencer: faltan " + diff + " días";
+  else qs("#benefit_alert").value = "Vigente: faltan " + diff + " días";
+}
+
+function getSelectedBenefitPayload(){
+  const b = getSelectedBenefitPayload();
+  return {
+    ...b,
+    inicio_vigencia: qs("#benefit_start").value || "",
+    fin_vigencia: qs("#benefit_end").value || "",
+    dias_alerta_previa: qs("#benefit_alert_days").value || "",
+    alerta_vigencia: qs("#benefit_alert").value || ""
+  };
+}
+
 function bind(){
   qs("#refreshDash").onclick=loadDashboard;
+  qs("#benefit_start").onchange=updateBenefitAlert;
+  qs("#benefit_end").onchange=updateBenefitAlert;
+  qs("#benefit_alert_days").oninput=updateBenefitAlert;
   qs("#saveEmployerBtn").onclick=saveEmployer;
   qs("#createBtn").onclick=createRequest;
   qs("#prepareBatchBtn").onclick=prepareBatch;
@@ -159,15 +240,15 @@ function bind(){
   qs("#closeBtn").onclick=closeRequest;
 }
 async function post(action,payload){if(APPS_SCRIPT_URL.includes("PEGAR_AQUI"))throw new Error("Falta configurar APPS_SCRIPT_URL.");const r=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,payload})});const txt=await r.text();let j;try{j=JSON.parse(txt)}catch{j={ok:true,message:txt}}if(!j.ok)throw new Error(j.error||"Error");return j}
-function buildLocalLink(token){const base=FORM_URL.includes("PEGAR_AQUI")?location.href.replace(/panel_estudio\.html.*/,"index.html"):FORM_URL;const b=BENEFITS.find(x=>x.id===qs("#benefit_id").value)||BENEFITS[0];return `${base}?token=${encodeURIComponent(token)}&ecuit=${encodeURIComponent(digits(qs("#employer_cuit").value))}&ename=${encodeURIComponent(qs("#employer_name").value.trim())}&benefit=${encodeURIComponent(b.name)}&req=${encodeURIComponent(b.description)}`}
-async function createRequest(){const box=qs("#createResult");box.className="notice warn";box.textContent="Procesando...";box.classList.remove("hidden");if(!cuitOk(qs("#employer_cuit").value)){box.className="notice bad";box.textContent="CUIT empleador inválido.";return}const b=BENEFITS.find(x=>x.id===qs("#benefit_id").value)||BENEFITS[0];const token=randomToken();const link=buildLocalLink(token);qs("#generated_link").value=link;const payload={token,link,employer_cuit:digits(qs("#employer_cuit").value),employer_name:qs("#employer_name").value.trim(),employer_email:qs("#employer_email").value.trim(),employer_contact:qs("#employer_contact").value.trim(),employer_phone:qs("#employer_phone").value.trim(),benefit:b,entry_date:qs("#entry_date").value,position_title:qs("#position_title").value,study_notes:qs("#study_notes").value,status:"Mail enviado al empleador"};try{const j=await post("createRequestToken",payload);box.className="notice ok";box.innerHTML=`Solicitud creada y mail enviado.<br>ID: <strong>${esc(j.request_id||"registrado")}</strong>`}catch(e){box.className="notice bad";box.innerHTML=`No se pudo confirmar en Apps Script: ${esc(e.message)}<br>Link local generado: <span class="mono">${esc(link)}</span>`}}
-async function loadDashboard(){const table=qs("#dashTable");table.innerHTML="<tr><th>ID</th><th>Cliente</th><th>Estado</th><th>Beneficio</th><th>Acciones</th></tr><tr><td colspan='5'>Dashboard operativo cuando Code.gs exponga listRequests.</td></tr>";try{if(APPS_SCRIPT_URL.includes("PEGAR_AQUI"))return;const r=await fetch(APPS_SCRIPT_URL+"?action=listRequests");const j=await r.json();if(!j.ok)return;renderRows(j.requests||[])}catch(e){}}
+function buildLocalLink(token){const base=FORM_URL.includes("PEGAR_AQUI")?location.href.replace(/panel_estudio\.html.*/,"index.html"):FORM_URL;const b=getSelectedBenefitPayload();return `${base}?token=${encodeURIComponent(token)}&ecuit=${encodeURIComponent(digits(qs("#employer_cuit").value))}&ename=${encodeURIComponent(qs("#employer_name").value.trim())}&benefit=${encodeURIComponent(b.name)}&req=${encodeURIComponent(b.description)}`}
+async function createRequest(){const box=qs("#createResult");box.className="notice warn";box.textContent="Procesando...";box.classList.remove("hidden");if(!cuitOk(qs("#employer_cuit").value)){box.className="notice bad";box.textContent="CUIT empleador inválido.";return}const b=getSelectedBenefitPayload();const token=randomToken();const link=buildLocalLink(token);qs("#generated_link").value=link;const payload={token,link,employer_cuit:digits(qs("#employer_cuit").value),employer_name:qs("#employer_name").value.trim(),employer_email:qs("#employer_email").value.trim(),employer_contact:qs("#employer_contact").value.trim(),employer_phone:qs("#employer_phone").value.trim(),benefit:b,entry_date:qs("#entry_date").value,position_title:qs("#position_title").value,study_notes:qs("#study_notes").value,status:"Mail enviado al empleador"};try{const j=await post("createRequestToken",payload);box.className="notice ok";box.innerHTML=`Solicitud creada y mail enviado.<br>ID: <strong>${esc(j.request_id||"registrado")}</strong>`}catch(e){box.className="notice bad";box.innerHTML=`No se pudo confirmar en Apps Script: ${esc(e.message)}<br>Link local generado: <span class="mono">${esc(link)}</span>`}}
+async function loadDashboard(){const table=qs("#dashTable");table.innerHTML="<tr><th>ID</th><th>Cliente</th><th>Estado</th><th>Beneficio</th><th>Alerta beneficio</th><th>Acciones</th></tr><tr><td colspan='5'>Dashboard operativo cuando Code.gs exponga listRequests.</td></tr>";try{if(APPS_SCRIPT_URL.includes("PEGAR_AQUI"))return;const r=await fetch(APPS_SCRIPT_URL+"?action=listRequests");const j=await r.json();if(!j.ok)return;renderRows(j.requests||[])}catch(e){}}
 function renderRows(rows){
   qs("#k_open").textContent=rows.filter(r=>!["Cerrado","cancelled","Anulada","Eliminada prueba"].includes(r.status)).length;
   qs("#k_docs").textContent=rows.filter(r=>String(r.status).toLowerCase().includes("documentación")).length;
   qs("#k_due").textContent=rows.filter(r=>r.due_soon).length;
   qs("#k_closed").textContent=rows.filter(r=>["Cerrado","Anulada","Eliminada prueba"].includes(r.status)).length;
-  qs("#dashTable").innerHTML="<tr><th>ID</th><th>Cliente</th><th>Estado</th><th>Beneficio</th><th>Acciones</th></tr>"+
+  qs("#dashTable").innerHTML="<tr><th>ID</th><th>Cliente</th><th>Estado</th><th>Beneficio</th><th>Alerta beneficio</th><th>Acciones</th></tr>"+
   rows.map(r=>{
     const id = esc(r.id || "");
     const link = esc(r.link || "");
@@ -232,7 +313,7 @@ async function createBatch(){
     return;
   }
   if(!qs("#batchRows").innerHTML.trim()) prepareBatch();
-  const b = BENEFITS.find(x=>x.id===qs("#benefit_id").value)||BENEFITS[0];
+  const b = getSelectedBenefitPayload();
   const batchId = qs("#batch_id").value || newBatchId();
   qs("#batch_id").value = batchId;
   const rows = collectBatchRows();
@@ -295,11 +376,44 @@ async function uploadSignedPdf(requestId){
   try{ const file=input.files[0]; const b64=await fileToBase64Panel(file); const j=await post("uploadSignedPdf",{request_id:requestId,filename:file.name,mimeType:file.type||"application/octet-stream",base64:b64.split(",")[1]}); box.className="notice ok"; box.innerHTML=`Copia firmada cargada. ${j.file_url?`<a target="_blank" href="${esc(j.file_url)}">Abrir archivo</a>`:""}`; await openDetail(requestId); await loadDashboard(); }
   catch(e){ box.className="notice bad"; box.textContent=e.message; }
 }
-async function cancelReq(id){ const note=prompt("Motivo de anulación o eliminación de prueba:","Solicitud de prueba / anulación operativa"); if(note===null)return; try{ await post("cancelRequest",{request_id:id,note:note,test_delete:true}); await loadDashboard(); alert("Solicitud anulada/eliminada como prueba."); }catch(e){ alert(e.message); } }
+async function cancelReq(id){
+  const note = prompt("Motivo de anulación o eliminación de prueba:", "Solicitud de prueba / anulación operativa");
+  if(note === null) return;
+  try{
+    await post("updateRequestStatus", { request_id: id, status: "Eliminada prueba", note: note });
+    await loadDashboard();
+    alert("Solicitud anulada/eliminada como prueba.");
+  }catch(e){
+    alert(e.message);
+  }
+}
 
 async function sendReminder(){const box=qs("#remResult");box.className="notice warn";box.textContent="Enviando...";box.classList.remove("hidden");try{await post("sendReminder",{request_id:qs("#rem_request_id").value,to:qs("#rem_to").value,reason:qs("#rem_reason").value,note:qs("#rem_note").value});box.className="notice ok";box.textContent="Recordatorio registrado/enviado."}catch(e){box.className="notice bad";box.textContent=e.message}}
 async function closeRequest(){const box=qs("#closeResult");box.className="notice warn";box.textContent="Registrando...";box.classList.remove("hidden");try{await post("updateRequestStatus",{request_id:qs("#close_request_id").value,status:qs("#close_status").value,note:qs("#close_note").value});box.className="notice ok";box.textContent="Estado actualizado."}catch(e){box.className="notice bad";box.textContent=e.message}}
-console.log("e-Up RRHH panel v10.0.0 - 2026-05-24");
+
+function setViewMode(mode){
+  document.body.classList.remove("force-mobile","force-desktop");
+  if(mode === "mobile") document.body.classList.add("force-mobile");
+  if(mode === "desktop") document.body.classList.add("force-desktop");
+  try{ localStorage.setItem("eup_rrhh_view_mode", mode); }catch(e){}
+  const d = document.getElementById("viewModeDesktop");
+  const m = document.getElementById("viewModeMobile");
+  if(d) d.classList.toggle("active", mode === "desktop");
+  if(m) m.classList.toggle("active", mode === "mobile");
+}
+function initViewMode(){
+  let saved = "";
+  try{ saved = localStorage.getItem("eup_rrhh_view_mode") || ""; }catch(e){}
+  const defaultMode = saved || (window.innerWidth <= 820 ? "mobile" : "desktop");
+  setViewMode(defaultMode);
+  const d = document.getElementById("viewModeDesktop");
+  const m = document.getElementById("viewModeMobile");
+  if(d) d.onclick = () => setViewMode("desktop");
+  if(m) m.onclick = () => setViewMode("mobile");
+}
+
+console.log("e-Up RRHH panel v12.0.0 - 2026-05-24");
+initViewMode();
 init();
 </script>
 </body></html>

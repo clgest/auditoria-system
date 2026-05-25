@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- e-Up RRHH Formulario Postulante | VERSION v10.0.0 | 2026-05-24 -->
+<!-- e-Up RRHH Formulario Postulante | VERSION v12.0.0 | 2026-05-24 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -44,12 +44,38 @@ input[type="checkbox"],input[type="radio"]{width:auto;min-width:18px;height:18px
 .checkline{display:flex;align-items:center;gap:10px;line-height:1.35}
 .checkline input{flex:0 0 auto}
 
+
+.view-toggle{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.view-toggle button{border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;cursor:pointer}
+.view-toggle button.active{background:#fff;color:#17365d}
+body.force-mobile .wrap{max-width:480px}
+body.force-mobile .layout{grid-template-columns:1fr}
+body.force-mobile .nav{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line);display:flex;overflow:auto;gap:6px}
+body.force-mobile .nav button{white-space:nowrap;margin:0;width:auto}
+body.force-mobile .grid{grid-template-columns:1fr}
+body.force-mobile .choicebar,body.force-mobile .choicebar.three{grid-template-columns:1fr}
+body.force-mobile .kv{grid-template-columns:1fr}
+body.force-mobile .doc-title{font-size:20px}
+body.force-desktop .wrap{max-width:1100px}
+body.force-desktop .layout{grid-template-columns:250px 1fr}
+body.force-desktop .nav{border-right:1px solid var(--line);border-bottom:0;position:sticky;top:58px;display:block;max-height:calc(100vh - 58px)}
+body.force-desktop .nav button{white-space:normal;width:100%;margin-bottom:4px}
+body.force-desktop .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.force-desktop .choicebar{grid-template-columns:repeat(2,1fr)}
+body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
+
 @media(max-width:820px){.wrap{padding:8px}.layout{grid-template-columns:1fr}.nav{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line);display:flex;overflow:auto;gap:6px}.nav button{white-space:nowrap;margin:0;width:auto}.grid{grid-template-columns:1fr}.choicebar,.choicebar.three{grid-template-columns:1fr}.doc-title{font-size:20px}.kv{grid-template-columns:1fr}.btns{padding:10px}.btn{flex:1}.top h1{font-size:15px}}
 @media print{body{background:#fff}.top,.nav,.btns,.no-print{display:none!important}.wrap{max-width:none;padding:0}.paper{box-shadow:none;border:0;border-radius:0}.section{display:block;page-break-inside:avoid}.layout{display:block}}
 </style>
 </head>
 <body>
-<div class="top"><div class="top-inner"><div><h1>e-Up RRHH — Solicitud de Ingreso</h1><small>Formulario del postulante</small></div><div class="small">Los campos con <span class="req">*</span> son obligatorios <span class="version-badge">Formulario v10.0.0</span></div></div></div>
+<div class="top"><div class="top-inner"><div><h1>e-Up RRHH — Solicitud de Ingreso</h1><small>Formulario del postulante</small></div><div class="small">
+  <div class="view-toggle no-print">
+    <button type="button" id="viewModeDesktop">Vista escritorio</button>
+    <button type="button" id="viewModeMobile">Vista celular</button>
+  </div>
+  Los campos con <span class="req">*</span> son obligatorios <span class="version-badge">Formulario v12.0.0</span>
+</div></div></div>
 <div class="wrap">
 <form id="form" class="paper" novalidate>
 <div class="doc-head"><div class="doc-title">Solicitud de Ingreso</div><p class="top-instruction center">Complete sus datos y adjunte la documentación solicitada. El Estudio administrará la revisión a través del empleador.</p></div>
@@ -176,7 +202,7 @@ Esta solicitud fue generada por el Estudio y remitida al empleador. Usted solo d
 </form>
 </div>
 <script>
-const APP_VERSION = "v10.0.0";
+const APP_VERSION = "v12.0.0";
 const APP_BUILD_DATE = "2026-05-24";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxhZ9FJ_Af2eNfbw50wO3m0zWiuc05Sz-ttEiufIxJk1Sl4us1yltktbXE-eUgQ8Gk7/exec";
 const DECLARATION_VERSION = "DDJJ-RRHH-2026-04";
@@ -278,7 +304,30 @@ function collect(){const fd=new FormData(form),data={};fd.forEach((v,k)=>data[k]
 function renderPreview(){const d=collect(),miss=missingDocs();qs("#preview").innerHTML=`<div class="card"><h3>Empleador</h3><div class="kv"><strong>CUIT</strong><span>${esc(d.employer_cuit)}</span><strong>Nombre</strong><span>${esc(d.employer_name)}</span><strong>Beneficio</strong><span>${esc(d.benefit_name)}</span></div></div><div class="card"><h3>Postulante</h3><div class="kv"><strong>Nombre</strong><span>${esc(d.last_names)}, ${esc(d.first_names)}</span><strong>Documento</strong><span>${esc(d.document_type)} ${esc(d.document_number)}</span><strong>CUIL</strong><span>${esc(d.cuil)}</span><strong>Email</strong><span>${esc(d.email)}</span></div></div><div class="card"><h3>Documentación</h3>${baseDocs().map(x=>`• ${esc(x.label)}: ${docs[x.id]?.filename?'cargado':'pendiente'}`).join("<br>")}</div>${miss.length?`<div class="notice warn">Falta documentación obligatoria: ${miss.map(x=>esc(x.label)).join(", ")}. Puede volver a cargarla o enviar la solicitud como pendiente con justificación fundada.</div><button type="button" class="btn ghost" onclick="goDocs()">Volver a cargar documentación</button> <button type="button" class="btn warn" onclick="allowPending()">Enviar como pendiente y justificar</button>`:''}`}
 window.goDocs=()=>{current=6;renderSection()};window.allowPending=()=>{qs("#justificationBox").classList.remove("hidden");current=6;renderSection();setTimeout(()=>form.elements.missing_docs_justification.focus(),100)}
 async function submit(){const err=qs("#finalError"),ok=qs("#finalBox"),sending=qs("#sending");err.classList.add("hidden");ok.classList.add("hidden");if(APPS_SCRIPT_URL.includes("PEGAR_AQUI")){err.textContent="Falta configurar la URL de Apps Script en index.html.";err.classList.remove("hidden");return}if(!validateCurrent())return;if(!validateNoRepeatedIdentifiers())return;const miss=missingDocs();if(miss.length&&!val("missing_docs_justification")){err.textContent="Falta documentación obligatoria. Debe cargarla o justificar fundadamente la imposibilidad antes de enviar como pendiente.";err.classList.remove("hidden");return}const data=collect();data.payload_hash=await sha256(JSON.stringify({...data,documents:data.documents.map(x=>({type:x.type,filename:x.filename,required:x.required}))}));data.declaration_text_hash=await sha256(data.declaration_text);sending.classList.remove("hidden");try{const r=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"submitApplication",payload:data})});const txt=await r.text();let j;try{j=JSON.parse(txt)}catch{j={ok:true,message:txt}}if(!j.ok)throw new Error(j.error||"Error al guardar");ok.innerHTML=`Solicitud enviada.<br><strong>Número:</strong> ${esc(j.request_id||"registrado")}<br>${j.pdf_url?`<a target="_blank" href="${j.pdf_url}">Abrir PDF generado</a>`:""}`;ok.classList.remove("hidden")}catch(ex){err.textContent="No se pudo enviar: "+ex.message;err.classList.remove("hidden")}finally{sending.classList.add("hidden")}}
-console.log("e-Up RRHH formulario v10.0.0 - 2026-05-24");
+
+function setViewMode(mode){
+  document.body.classList.remove("force-mobile","force-desktop");
+  if(mode === "mobile") document.body.classList.add("force-mobile");
+  if(mode === "desktop") document.body.classList.add("force-desktop");
+  try{ localStorage.setItem("eup_rrhh_view_mode", mode); }catch(e){}
+  const d = document.getElementById("viewModeDesktop");
+  const m = document.getElementById("viewModeMobile");
+  if(d) d.classList.toggle("active", mode === "desktop");
+  if(m) m.classList.toggle("active", mode === "mobile");
+}
+function initViewMode(){
+  let saved = "";
+  try{ saved = localStorage.getItem("eup_rrhh_view_mode") || ""; }catch(e){}
+  const defaultMode = saved || (window.innerWidth <= 820 ? "mobile" : "desktop");
+  setViewMode(defaultMode);
+  const d = document.getElementById("viewModeDesktop");
+  const m = document.getElementById("viewModeMobile");
+  if(d) d.onclick = () => setViewMode("desktop");
+  if(m) m.onclick = () => setViewMode("mobile");
+}
+
+console.log("e-Up RRHH formulario v12.0.0 - 2026-05-24");
+initViewMode();
 init();
 </script>
 </body></html>
