@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- e-Up RRHH Panel del Estudio | VERSION v10.0.0 | 2026-05-24 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -14,7 +15,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple
 .paper{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 28px rgba(16,24,40,.08);overflow:hidden}
 .doc-head{padding:18px;border-bottom:1px solid var(--line);background:linear-gradient(#fff,#f8fafc)}
 .doc-title{text-align:center;font-size:24px;font-weight:800;letter-spacing:.12em;margin:0 0 8px}
-.req{color:var(--bad);font-weight:900}.hint{font-size:13px;color:var(--muted);margin:4px 0 0}.small{font-size:12px;color:var(--muted)}
+.req{color:var(--bad);font-weight:900}.hint{font-size:13px;color:var(--muted);margin:4px 0 0}.small{font-size:12px;color:var(--muted)}.version-badge{display:inline-block;margin-left:10px;padding:3px 8px;border-radius:999px;background:#eef4ff;color:#3538cd;font-weight:800;font-size:12px}
 .layout{display:grid;grid-template-columns:250px 1fr;gap:0}
 .nav{border-right:1px solid var(--line);background:#fbfcfe;padding:12px;position:sticky;top:58px;align-self:start;max-height:calc(100vh - 58px);overflow:auto}
 .nav button{display:block;width:100%;text-align:left;border:1px solid transparent;background:transparent;padding:10px;border-radius:10px;font-weight:700;color:#344054;cursor:pointer;margin-bottom:4px}
@@ -48,7 +49,7 @@ input[type="checkbox"],input[type="radio"]{width:auto;min-width:18px;height:18px
 </style>
 </head>
 <body>
-<div class="top"><div class="top-inner"><div><h1>e-Up RRHH — Panel del Estudio</h1><small>Inicio, seguimiento y cierre de altas</small></div><div class="small">El Estudio inicia y cierra el proceso</div></div></div>
+<div class="top"><div class="top-inner"><div><h1>e-Up RRHH — Panel del Estudio</h1><small>Inicio, seguimiento y cierre de altas</small></div><div class="small">El Estudio inicia y cierra el proceso <span class="version-badge">Panel v10.0.0</span></div></div></div>
 <div class="wrap"><div class="paper">
 <div class="doc-head"><div class="doc-title">Panel del Estudio</div><p class="hint center">Crear solicitud, seleccionar beneficio, generar token, enviar mail al empleador, controlar estado y cerrar trámite.</p></div>
 <div class="layout"><nav id="nav" class="nav"></nav><main class="content">
@@ -128,6 +129,8 @@ input[type="checkbox"],input[type="radio"]{width:auto;min-width:18px;height:18px
 </section>
 </main></div></div></div>
 <script>
+const APP_VERSION = "v10.0.0";
+const APP_BUILD_DATE = "2026-05-24";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxhZ9FJ_Af2eNfbw50wO3m0zWiuc05Sz-ttEiufIxJk1Sl4us1yltktbXE-eUgQ8Gk7/exec";
 const FORM_URL = "https://clgest.github.io/auditoria-system/";
 const SECTIONS=["Dashboard","Cliente","Beneficio","Crear link","Lote de altas","Recordatorios","Cierre"];
@@ -296,6 +299,7 @@ async function cancelReq(id){ const note=prompt("Motivo de anulación o eliminac
 
 async function sendReminder(){const box=qs("#remResult");box.className="notice warn";box.textContent="Enviando...";box.classList.remove("hidden");try{await post("sendReminder",{request_id:qs("#rem_request_id").value,to:qs("#rem_to").value,reason:qs("#rem_reason").value,note:qs("#rem_note").value});box.className="notice ok";box.textContent="Recordatorio registrado/enviado."}catch(e){box.className="notice bad";box.textContent=e.message}}
 async function closeRequest(){const box=qs("#closeResult");box.className="notice warn";box.textContent="Registrando...";box.classList.remove("hidden");try{await post("updateRequestStatus",{request_id:qs("#close_request_id").value,status:qs("#close_status").value,note:qs("#close_note").value});box.className="notice ok";box.textContent="Estado actualizado."}catch(e){box.className="notice bad";box.textContent=e.message}}
+console.log("e-Up RRHH panel v10.0.0 - 2026-05-24");
 init();
 </script>
 </body></html>
