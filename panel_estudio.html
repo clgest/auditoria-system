@@ -59,7 +59,9 @@ input[type="checkbox"],input[type="radio"]{width:auto;min-width:18px;height:18px
 <div class="card"><h3>Vencimiento 72 hs</h3><div class="doc-title" id="k_due">0</div></div>
 <div class="card"><h3>Cerradas</h3><div class="doc-title" id="k_closed">0</div></div>
 </div>
-<div class="card"><h3>Seguimiento</h3><div class="grid"><div class="field"><label>Filtrar por cliente</label><input id="filterClient"></div><div class="field"><label>Filtrar por estado</label><select id="filterStatus"><option value="">Todos</option><option>Mail enviado al empleador</option><option>Formulario iniciado</option><option>Carga completa</option><option>Carga completa con documentación pendiente</option><option>Observado</option><option>Cerrado</option></select></div></div><button class="btn ghost" id="refreshDash">Actualizar dashboard</button><div style="overflow:auto;margin-top:10px"><table class="table" id="dashTable"></table></div></div>
+<div class="card"><h3>Seguimiento</h3><div class="grid"><div class="field"><label>Filtrar por cliente</label><input id="filterClient"></div><div class="field"><label>Filtrar por estado</label><select id="filterStatus"><option value="">Todos</option><option>Mail enviado al empleador</option><option>Formulario iniciado</option><option>Carga completa</option><option>Carga completa con documentación pendiente</option><option>Observado</option><option>Cerrado</option></select></div></div><button class="btn ghost" id="refreshDash">Actualizar dashboard</button><div style="overflow:auto;margin-top:10px"><table class="table" id="dashTable"></table></div>
+<div id="requestDetailBox" class="card hidden"></div>
+</div>
 </section>
 <section class="section" data-step="1"><h2>Cliente empleador</h2>
 <div class="intro">Cargue el cliente una vez. Luego se selecciona y el sistema toma automáticamente el mail guardado.</div>
@@ -69,7 +71,9 @@ input[type="checkbox"],input[type="radio"]{width:auto;min-width:18px;height:18px
 <div class="field"><label>Mail empleador <span class="req">*</span></label><input id="employer_email" type="email"><div class="help">Canal principal para enviar link/token y dejar rastro.</div></div>
 <div class="field"><label>Contacto</label><input id="employer_contact"></div>
 <div class="field"><label>Teléfono</label><input id="employer_phone"></div>
+<div class="field full"><button type="button" class="btn ghost" id="saveEmployerBtn">Guardar cliente</button></div>
 </div>
+<div id="saveEmployerResult" class="notice hidden"></div>
 </section>
 <section class="section" data-step="2"><h2>Beneficio aplicable</h2>
 <div class="intro">El beneficio lo define el Estudio al generar la solicitud. El postulante no lo elige.</div>
@@ -125,7 +129,7 @@ input[type="checkbox"],input[type="radio"]{width:auto;min-width:18px;height:18px
 </main></div></div></div>
 <script>
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxhZ9FJ_Af2eNfbw50wO3m0zWiuc05Sz-ttEiufIxJk1Sl4us1yltktbXE-eUgQ8Gk7/exec";
-const FORM_URL = " https://clgest.github.io/auditoria-system/";
+const FORM_URL = "https://clgest.github.io/auditoria-system/";
 const SECTIONS=["Dashboard","Cliente","Beneficio","Crear link","Lote de altas","Recordatorios","Cierre"];
 const BENEFITS=[
 {id:"none",name:"Ninguno",status:"operativo",description:"Alta sin beneficio especial.",docs:"Documentación estándar.",risk:"Sin reducción especial."},
@@ -144,6 +148,7 @@ function renderSection(){qsa(".section").forEach((s,i)=>s.classList.toggle("acti
 function renderBenefit(){const b=BENEFITS.find(x=>x.id===qs("#benefit_id").value)||BENEFITS[0];qs("#benefit_status").value=b.status;qs("#benefit_description").value=b.description;qs("#benefit_docs").value=b.docs;qs("#benefit_risk").value=b.risk}
 function bind(){
   qs("#refreshDash").onclick=loadDashboard;
+  qs("#saveEmployerBtn").onclick=saveEmployer;
   qs("#createBtn").onclick=createRequest;
   qs("#prepareBatchBtn").onclick=prepareBatch;
   qs("#createBatchBtn").onclick=createBatch;
@@ -154,7 +159,28 @@ async function post(action,payload){if(APPS_SCRIPT_URL.includes("PEGAR_AQUI"))th
 function buildLocalLink(token){const base=FORM_URL.includes("PEGAR_AQUI")?location.href.replace(/panel_estudio\.html.*/,"index.html"):FORM_URL;const b=BENEFITS.find(x=>x.id===qs("#benefit_id").value)||BENEFITS[0];return `${base}?token=${encodeURIComponent(token)}&ecuit=${encodeURIComponent(digits(qs("#employer_cuit").value))}&ename=${encodeURIComponent(qs("#employer_name").value.trim())}&benefit=${encodeURIComponent(b.name)}&req=${encodeURIComponent(b.description)}`}
 async function createRequest(){const box=qs("#createResult");box.className="notice warn";box.textContent="Procesando...";box.classList.remove("hidden");if(!cuitOk(qs("#employer_cuit").value)){box.className="notice bad";box.textContent="CUIT empleador inválido.";return}const b=BENEFITS.find(x=>x.id===qs("#benefit_id").value)||BENEFITS[0];const token=randomToken();const link=buildLocalLink(token);qs("#generated_link").value=link;const payload={token,link,employer_cuit:digits(qs("#employer_cuit").value),employer_name:qs("#employer_name").value.trim(),employer_email:qs("#employer_email").value.trim(),employer_contact:qs("#employer_contact").value.trim(),employer_phone:qs("#employer_phone").value.trim(),benefit:b,entry_date:qs("#entry_date").value,position_title:qs("#position_title").value,study_notes:qs("#study_notes").value,status:"Mail enviado al empleador"};try{const j=await post("createRequestToken",payload);box.className="notice ok";box.innerHTML=`Solicitud creada y mail enviado.<br>ID: <strong>${esc(j.request_id||"registrado")}</strong>`}catch(e){box.className="notice bad";box.innerHTML=`No se pudo confirmar en Apps Script: ${esc(e.message)}<br>Link local generado: <span class="mono">${esc(link)}</span>`}}
 async function loadDashboard(){const table=qs("#dashTable");table.innerHTML="<tr><th>ID</th><th>Cliente</th><th>Estado</th><th>Beneficio</th><th>Acciones</th></tr><tr><td colspan='5'>Dashboard operativo cuando Code.gs exponga listRequests.</td></tr>";try{if(APPS_SCRIPT_URL.includes("PEGAR_AQUI"))return;const r=await fetch(APPS_SCRIPT_URL+"?action=listRequests");const j=await r.json();if(!j.ok)return;renderRows(j.requests||[])}catch(e){}}
-function renderRows(rows){qs("#k_open").textContent=rows.filter(r=>!["Cerrado","cancelled"].includes(r.status)).length;qs("#k_docs").textContent=rows.filter(r=>String(r.status).includes("documentación")).length;qs("#k_due").textContent=rows.filter(r=>r.due_soon).length;qs("#k_closed").textContent=rows.filter(r=>r.status==="Cerrado").length;qs("#dashTable").innerHTML="<tr><th>ID</th><th>Cliente</th><th>Estado</th><th>Beneficio</th><th>Acciones</th></tr>"+rows.map(r=>`<tr><td>${esc(r.id)}</td><td>${esc(r.employer_name)}</td><td>${esc(r.status)}</td><td>${esc(r.benefit_name)}</td><td><button onclick="prepReminder('${esc(r.id)}')" class="btn ghost">Mail</button></td></tr>`).join("")}
+function renderRows(rows){
+  qs("#k_open").textContent=rows.filter(r=>!["Cerrado","cancelled","Anulada","Eliminada prueba"].includes(r.status)).length;
+  qs("#k_docs").textContent=rows.filter(r=>String(r.status).toLowerCase().includes("documentación")).length;
+  qs("#k_due").textContent=rows.filter(r=>r.due_soon).length;
+  qs("#k_closed").textContent=rows.filter(r=>["Cerrado","Anulada","Eliminada prueba"].includes(r.status)).length;
+  qs("#dashTable").innerHTML="<tr><th>ID</th><th>Cliente</th><th>Estado</th><th>Beneficio</th><th>Acciones</th></tr>"+
+  rows.map(r=>{
+    const id = esc(r.id || "");
+    const link = esc(r.link || "");
+    const pdf = esc(r.pdf_url || "");
+    return `<tr>
+      <td>${id}</td><td>${esc(r.employer_name)}</td><td>${esc(r.status)}</td><td>${esc(r.benefit_name)}</td>
+      <td style="white-space:nowrap">
+        <button onclick="openDetail('${id}')" class="btn ghost">Abrir</button>
+        <button onclick="copyText('${link}')" class="btn ghost">Copiar link</button>
+        <button onclick="openLink('${link}')" class="btn ghost">Formulario</button>
+        <button onclick="prepReminder('${id}')" class="btn ghost">Mail</button>
+        <button onclick="openLink('${pdf}')" class="btn ghost">PDF</button>
+        <button onclick="cancelReq('${id}')" class="btn danger">Anular</button>
+      </td></tr>`;
+  }).join("");
+}
 window.prepReminder=id=>{current=5;renderSection();qs("#rem_request_id").value=id}
 
 function newBatchId(){
@@ -228,6 +254,45 @@ async function createBatch(){
     box.innerHTML=`No se pudo confirmar en Apps Script: ${esc(e.message)}<br><strong>Links generados localmente:</strong><br>${linksHtml}`;
   }
 }
+
+
+async function saveEmployer(){
+  const box = qs("#saveEmployerResult");
+  box.className="notice warn"; box.textContent="Guardando cliente..."; box.classList.remove("hidden");
+  if(!cuitOk(qs("#employer_cuit").value)){ box.className="notice bad"; box.textContent="CUIT empleador inválido."; return; }
+  try{
+    await post("saveEmployer", { employer_cuit: digits(qs("#employer_cuit").value), employer_name: qs("#employer_name").value.trim(), employer_email: qs("#employer_email").value.trim(), employer_contact: qs("#employer_contact").value.trim(), employer_phone: qs("#employer_phone").value.trim() });
+    box.className="notice ok"; box.textContent="Cliente guardado correctamente.";
+  }catch(e){ box.className="notice bad"; box.textContent=e.message; }
+}
+function openLink(url){ if(!url){ alert("No hay link disponible."); return; } window.open(url,"_blank"); }
+async function copyText(text){ if(!text){ alert("No hay texto para copiar."); return; } try{ await navigator.clipboard.writeText(text); alert("Copiado."); }catch(e){ prompt("Copiar manualmente:", text); } }
+async function openDetail(id){
+  const box=qs("#requestDetailBox"); box.className="card"; box.innerHTML="<h3>Detalle de solicitud</h3><p>Cargando...</p>";
+  try{ if(APPS_SCRIPT_URL.includes("PEGAR_AQUI")) throw new Error("Falta configurar APPS_SCRIPT_URL."); const r=await fetch(APPS_SCRIPT_URL+"?action=getRequestDetail&request_id="+encodeURIComponent(id)); const j=await r.json(); if(!j.ok) throw new Error(j.error||"No se pudo cargar detalle."); renderDetail(j); }
+  catch(e){ box.innerHTML=`<h3>Detalle de solicitud</h3><div class="notice bad">${esc(e.message)}</div>`; }
+}
+function renderDetail(j){
+  const r=j.request||{}, docs=j.documents||[], pdfs=j.pdfs||[], mails=j.mails||[], audit=j.audit||[], applicant=(j.applicant||[])[0]||{}, accept=(j.acceptances||[])[0]||{};
+  qs("#requestDetailBox").className="card";
+  qs("#requestDetailBox").innerHTML=`
+    <h3>Detalle de solicitud ${esc(r.id_solicitud||"")}</h3>
+    <div class="grid"><div class="card"><h3>Solicitud</h3><div class="kv"><strong>Cliente</strong><span>${esc(r.razon_social)}</span><strong>CUIT</strong><span>${esc(r.cuit_empleador)}</span><strong>Estado</strong><span>${esc(r.estado)}</span><strong>Beneficio</strong><span>${esc(r.beneficio)}</span><strong>PDF</strong><span>${r.pdf_url?`<a target="_blank" href="${esc(r.pdf_url)}">Abrir PDF</a>`:"Sin PDF"}</span><strong>Carpeta</strong><span>${r.folder_url?`<a target="_blank" href="${esc(r.folder_url)}">Abrir carpeta</a>`:"Sin carpeta"}</span></div></div>
+    <div class="card"><h3>Postulante</h3><div class="kv"><strong>Nombre</strong><span>${esc(applicant.apellido||"")}, ${esc(applicant.nombres||"")}</span><strong>CUIL</strong><span>${esc(applicant.cuil||r.cuil_postulante||"")}</span><strong>Email</strong><span>${esc(applicant.email||r.email_postulante||"")}</span><strong>DDJJ</strong><span>${accept.id_aceptacion?"Aceptada":"Sin aceptación registrada"}</span></div></div></div>
+    <h3>Documentos</h3>${docs.length?`<table class="table"><tr><th>Tipo</th><th>Archivo</th><th>Estado</th><th>Acceso</th></tr>${docs.map(d=>`<tr><td>${esc(d.tipo_documento)}</td><td>${esc(d.nombre_archivo)}</td><td>${esc(d.estado)}</td><td>${d.url_drive?`<a target="_blank" href="${esc(d.url_drive)}">Abrir</a>`:""}</td></tr>`).join("")}</table>`:"<p>Sin documentos registrados.</p>"}
+    <h3>PDF generados</h3>${pdfs.length?`<table class="table"><tr><th>Tipo</th><th>Hash</th><th>Acceso</th></tr>${pdfs.map(p=>`<tr><td>${esc(p.tipo_pdf)}</td><td class="mono">${esc(p.hash_pdf)}</td><td>${p.url_drive?`<a target="_blank" href="${esc(p.url_drive)}">Abrir</a>`:""}</td></tr>`).join("")}</table>`:"<p>Sin PDF registrado.</p>"}
+    <h3>Subir copia firmada por empleado</h3><div class="grid"><div class="field"><input type="file" id="signedPdfFile" accept=".pdf,image/*"></div><div class="field"><button class="btn ghost" onclick="uploadSignedPdf('${esc(r.id_solicitud)}')">Subir copia firmada</button></div></div><div id="signedPdfResult" class="notice hidden"></div>
+    <h3>Mail log</h3>${mails.length?`<table class="table"><tr><th>Fecha</th><th>Destinatario</th><th>Motivo</th><th>Estado</th></tr>${mails.map(m=>`<tr><td>${esc(m.sent_at)}</td><td>${esc(m.destinatario_email)}</td><td>${esc(m.motivo)}</td><td>${esc(m.estado)}</td></tr>`).join("")}</table>`:"<p>Sin mails registrados.</p>"}
+    <h3>Audit log</h3>${audit.length?`<table class="table"><tr><th>Fecha</th><th>Acción</th><th>Detalle</th></tr>${audit.map(a=>`<tr><td>${esc(a.created_at)}</td><td>${esc(a.accion)}</td><td>${esc(a.detalle)}</td></tr>`).join("")}</table>`:"<p>Sin auditoría registrada.</p>"}`;
+}
+function fileToBase64Panel(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
+async function uploadSignedPdf(requestId){
+  const box=qs("#signedPdfResult"), input=qs("#signedPdfFile"); if(!input||!input.files||!input.files[0]){alert("Seleccione el PDF o imagen firmada.");return;}
+  box.className="notice warn"; box.textContent="Subiendo copia firmada..."; box.classList.remove("hidden");
+  try{ const file=input.files[0]; const b64=await fileToBase64Panel(file); const j=await post("uploadSignedPdf",{request_id:requestId,filename:file.name,mimeType:file.type||"application/octet-stream",base64:b64.split(",")[1]}); box.className="notice ok"; box.innerHTML=`Copia firmada cargada. ${j.file_url?`<a target="_blank" href="${esc(j.file_url)}">Abrir archivo</a>`:""}`; await openDetail(requestId); await loadDashboard(); }
+  catch(e){ box.className="notice bad"; box.textContent=e.message; }
+}
+async function cancelReq(id){ const note=prompt("Motivo de anulación o eliminación de prueba:","Solicitud de prueba / anulación operativa"); if(note===null)return; try{ await post("cancelRequest",{request_id:id,note:note,test_delete:true}); await loadDashboard(); alert("Solicitud anulada/eliminada como prueba."); }catch(e){ alert(e.message); } }
 
 async function sendReminder(){const box=qs("#remResult");box.className="notice warn";box.textContent="Enviando...";box.classList.remove("hidden");try{await post("sendReminder",{request_id:qs("#rem_request_id").value,to:qs("#rem_to").value,reason:qs("#rem_reason").value,note:qs("#rem_note").value});box.className="notice ok";box.textContent="Recordatorio registrado/enviado."}catch(e){box.className="notice bad";box.textContent=e.message}}
 async function closeRequest(){const box=qs("#closeResult");box.className="notice warn";box.textContent="Registrando...";box.classList.remove("hidden");try{await post("updateRequestStatus",{request_id:qs("#close_request_id").value,status:qs("#close_status").value,note:qs("#close_note").value});box.className="notice ok";box.textContent="Estado actualizado."}catch(e){box.className="notice bad";box.textContent=e.message}}
