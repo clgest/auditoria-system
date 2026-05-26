@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- e-Up RRHH Panel del Estudio | VERSION v14.0.0 | 2026-05-24 -->
+<!-- e-Up RRHH Panel del Estudio | VERSION v15.0.0 | 2026-05-24 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -72,6 +72,12 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
 .checklist-actions{display:flex;gap:6px;flex-wrap:wrap}
 .checklist-actions button,.checklist-actions a{display:inline-block;border:1px solid var(--brand);background:#fff;color:var(--brand);text-decoration:none;border-radius:8px;padding:7px 9px;font-weight:800;font-size:12px;cursor:pointer}
 
+
+.help-inline{margin:8px 0}
+.help-btn{border:1px solid var(--brand);background:#fff;color:var(--brand);border-radius:10px;padding:8px 10px;font-weight:850;cursor:pointer}
+.help-panel{display:none;background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px;color:#344054}
+.help-panel.open{display:block}
+
 @media(max-width:820px){.wrap{padding:8px}.layout{grid-template-columns:1fr}.nav{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line);display:flex;overflow:auto;gap:6px}.nav button{white-space:nowrap;margin:0;width:auto}.grid{grid-template-columns:1fr}.choicebar,.choicebar.three{grid-template-columns:1fr}.doc-title{font-size:20px}.kv{grid-template-columns:1fr}.btns{padding:10px}.btn{flex:1}.top h1{font-size:15px}}
 @media print{body{background:#fff}.top,.nav,.btns,.no-print{display:none!important}.wrap{max-width:none;padding:0}.paper{box-shadow:none;border:0;border-radius:0}.section{display:block;page-break-inside:avoid}.layout{display:block}}
 </style>
@@ -82,23 +88,31 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
     <button type="button" id="viewModeDesktop">Vista escritorio</button>
     <button type="button" id="viewModeMobile">Vista celular</button>
   </div>
-  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v14.0.0</span>
+  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v15.0.0</span>
 </div></div></div>
 <div class="wrap"><div class="paper">
 <div class="doc-head"><div class="doc-title">Panel del Estudio</div><p class="hint center">Crear solicitud, seleccionar beneficio, generar token, enviar mail al empleador, controlar estado y cerrar trámite.</p></div>
 <div class="layout"><nav id="nav" class="nav"></nav><main class="content">
 <section class="section active" data-step="0"><h2>Dashboard</h2>
+<div class="help-inline"><button type="button" class="help-btn" onclick="toggleHelp('help_dashboard')">Ayuda</button><div class="help-panel" id="help_dashboard">Controla solicitudes activas, documentación pendiente, beneficios y alertas. El filtro Todos no muestra anuladas o eliminadas.</div></div>
 <div class="grid">
 <div class="card"><h3>Solicitudes abiertas</h3><div class="doc-title" id="k_open">0</div></div>
 <div class="card"><h3>Pendiente documentación</h3><div class="doc-title" id="k_docs">0</div></div>
 <div class="card"><h3>Vencimiento 72 hs</h3><div class="doc-title" id="k_due">0</div></div>
 <div class="card"><h3>Cerradas</h3><div class="doc-title" id="k_closed">0</div></div>
 </div>
+<div class="grid">
+<div class="card"><h3>Beneficios vigentes</h3><div class="doc-title" id="b_vigentes">0</div></div>
+<div class="card"><h3>Beneficios próximos a vencer</h3><div class="doc-title" id="b_proximos">0</div></div>
+<div class="card"><h3>Beneficios vencidos</h3><div class="doc-title" id="b_vencidos">0</div></div>
+<div class="card"><h3>Beneficios pendientes/inactivos</h3><div class="doc-title" id="b_pendientes">0</div></div>
+</div>
 <div class="card"><h3>Seguimiento</h3><div class="grid"><div class="field"><label>Filtrar por cliente</label><input id="filterClient"></div><div class="field"><label>Filtrar por estado</label><select id="filterStatus"><option value="">Todos</option><option>Mail enviado al empleador</option><option>Formulario iniciado</option><option>Carga completa</option><option>Carga completa con documentación pendiente</option><option>Observado</option><option>Cerrado</option><option>Anulada</option><option>Eliminada prueba</option><option value="__eliminadas__">Solo eliminadas/anuladas</option></select></div></div><button class="btn ghost" id="refreshDash">Actualizar dashboard</button><div style="overflow:auto;margin-top:10px"><table class="table" id="dashTable"></table></div>
 <div id="requestDetailBox" class="card hidden"></div>
 </div>
 </section>
 <section class="section" data-step="1"><h2>Cliente empleador</h2>
+<div class="help-inline"><button type="button" class="help-btn" onclick="toggleHelp('help_cliente')">Ayuda</button><div class="help-panel" id="help_cliente">Cargue el cliente y use el checklist para verificar ARCA, ART, REPSAL certificado y autorizaciones. Descargue constancias y súbalas como evidencia.</div></div>
 <div class="intro">Cargue el cliente una vez. Luego se selecciona y el sistema toma automáticamente el mail guardado.</div>
 <div class="grid">
 <div class="field"><label>CUIT empleador <span class="req">*</span></label><input id="employer_cuit" maxlength="11" inputmode="numeric"><div class="error">CUIT inválido.</div></div>
@@ -136,20 +150,34 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
 
 </section>
 <section class="section" data-step="2"><h2>Beneficio aplicable</h2>
-<div class="intro">El beneficio lo define el Estudio al generar la solicitud. El postulante no lo elige.</div>
+<div class="help-inline"><button type="button" class="help-btn" onclick="toggleHelp('help_beneficio')">Ayuda</button><div class="help-panel" id="help_beneficio">Administre el catálogo de beneficios. La vigencia y estado normativo condicionan si se puede generar una solicitud limpia o si requiere revisión.</div></div>
+<div class="intro">El beneficio lo define el Estudio. Use Agregar/Modificar/Inactivar para administrar el catálogo sin tocar código.</div>
 <div class="grid">
 <div class="field"><label>Beneficio</label><select id="benefit_id"></select></div>
-<div class="field"><label>Estado normativo</label><input id="benefit_status" readonly></div>
+<div class="field"><label>Estado normativo</label><select id="benefit_status"><option>operativo</option><option>pendiente de reglamentación</option><option>no operativo</option><option>suspendido</option><option>inactivo</option></select></div>
 <div class="field"><label>Inicio vigencia</label><input id="benefit_start" type="date"></div>
 <div class="field"><label>Fin vigencia / vencimiento</label><input id="benefit_end" type="date"></div>
 <div class="field"><label>Días alerta previa</label><input id="benefit_alert_days" type="number" min="1" value="30"></div>
 <div class="field"><label>Alerta de vigencia</label><input id="benefit_alert" readonly></div>
-<div class="field full"><label>Descripción / requisitos</label><textarea id="benefit_description" readonly></textarea></div>
-<div class="field full"><label>Documentación requerida por beneficio</label><textarea id="benefit_docs" readonly></textarea></div>
-<div class="field full"><label>Advertencia de riesgo</label><textarea id="benefit_risk" readonly></textarea></div>
+<div class="field"><label>Norma</label><input id="benefit_norma"></div>
+<div class="field"><label>Activo</label><select id="benefit_active"><option>SI</option><option>NO</option></select></div>
+<div class="field full"><label>Descripción</label><textarea id="benefit_description"></textarea></div>
+<div class="field full"><label>Requisitos</label><textarea id="benefit_requisitos"></textarea></div>
+<div class="field full"><label>Documentación exigida</label><textarea id="benefit_docs"></textarea></div>
+<div class="field full"><label>DDJJ específica</label><textarea id="benefit_ddjj"></textarea></div>
+<div class="field full"><label>Advertencia de riesgo</label><textarea id="benefit_risk"></textarea></div>
+<div class="field"><label>Permite generar solicitud</label><select id="benefit_permite"><option>SI</option><option>NO</option></select></div>
+<div class="field"><label>Requiere revisión del Estudio</label><select id="benefit_revision"><option>NO</option><option>SI</option></select></div>
 </div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+<button type="button" class="btn ghost" id="newBenefitBtn">Agregar beneficio</button>
+<button type="button" class="btn" id="saveBenefitBtn">Guardar / modificar beneficio</button>
+<button type="button" class="btn danger" id="inactiveBenefitBtn">Inactivar beneficio</button>
+</div>
+<div id="benefitResult" class="notice hidden"></div>
 </section>
 <section class="section" data-step="3"><h2>Crear solicitud y enviar link</h2>
+<div class="help-inline"><button type="button" class="help-btn" onclick="toggleHelp('help_crear')">Ayuda</button><div class="help-panel" id="help_crear">Genere token/link y envíelo al empleador. El empleador reenvía el link al postulante.</div></div>
 <div class="grid">
 <div class="field"><label>Fecha probable de ingreso</label><input id="entry_date" type="date"></div>
 <div class="field"><label>Puesto / cargo previsto</label><input id="position_title"></div>
@@ -161,6 +189,7 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
 </section>
 
 <section class="section" data-step="4"><h2>Lote de altas simultáneas</h2>
+<div class="help-inline"><button type="button" class="help-btn" onclick="toggleHelp('help_lote')">Ayuda</button><div class="help-panel" id="help_lote">Use lote cuando un empleador solicita dos o más altas. Cada postulante tiene su propio token/link.</div></div>
 <div class="intro">Use esta opción cuando un mismo empleador solicite dos o más altas. Se genera un token/link individual por postulante, dentro de un mismo lote.</div>
 <div class="grid">
 <div class="field"><label>Cantidad de postulantes</label><input id="batch_count" type="number" min="2" max="20" value="2"></div>
@@ -172,17 +201,61 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
 <div id="batchResult" class="notice hidden"></div>
 </section>
 
-<section class="section" data-step="5"><h2>Recordatorios y observaciones</h2>
-<div class="intro">Los mails del empleador y postulante son obligatorios cuando se operan avisos, documentación pendiente o subsanaciones.</div>
+<section class="section" data-step="5"><h2>Centro comunicaciones</h2>
+<div class="help-inline"><button type="button" class="help-btn" onclick="toggleHelp('help_comunicaciones')">Ayuda</button><div class="help-panel" id="help_comunicaciones">Use este centro para enviar mails con texto editable y adjuntos, o registrar llamadas y gestiones manuales.</div></div>
+<div class="intro">Canal formal de comunicación con empleador, postulante o terceros. Todo envío o gestión debe quedar registrado.</div>
 <div class="grid">
 <div class="field"><label>ID solicitud</label><input id="rem_request_id"></div>
-<div class="field"><label>Destinatario</label><select id="rem_to"><option value="employer">Empleador</option><option value="applicant">Postulante</option></select></div>
-<div class="field"><label>Motivo</label><select id="rem_reason"><option>Documentación pendiente</option><option>Carga incompleta</option><option>Vencimiento 72 horas hábiles</option><option>Observación del Estudio</option><option>Subsanación requerida</option></select></div>
-<div class="field full"><label>Mensaje adicional</label><textarea id="rem_note"></textarea></div>
-<div class="field full"><button class="btn ghost" id="sendReminderBtn">Enviar recordatorio</button></div>
-</div><div id="remResult" class="notice hidden"></div>
+<div class="field"><label>Destinatario</label><select id="rem_to"><option value="employer">Empleador</option><option value="applicant">Postulante</option><option value="custom">Otro</option></select></div>
+<div class="field"><label>Email destinatario</label><input id="comm_custom_email" type="email"></div>
+<div class="field"><label>Motivo</label><select id="rem_reason"><option>Documentación pendiente</option><option>Carga incompleta</option><option>Vencimiento 72 horas hábiles</option><option>Observación del Estudio</option><option>Subsanación requerida</option><option>Envío Alta Temprana</option><option>Examen preocupacional</option><option>Otro</option></select></div>
+<div class="field full"><label>Asunto</label><input id="comm_subject"></div>
+<div class="field full"><label>Texto del mail / comunicación</label><textarea id="rem_note"></textarea></div>
+<div class="field full"><label>Adjuntos</label><input type="file" id="comm_files" multiple accept=".pdf,image/*,.doc,.docx,.xls,.xlsx"></div>
+<div class="field full"><button class="btn ghost" id="sendReminderBtn">Enviar comunicación por mail</button></div>
+</div>
+<div id="remResult" class="notice hidden"></div>
+<hr>
+<h3>Registrar gestión manual / telefónica</h3>
+<div class="grid">
+<div class="field"><label>Medio</label><select id="manual_medium"><option>Teléfono</option><option>WhatsApp</option><option>Presencial</option><option>Otro</option></select></div>
+<div class="field"><label>Persona contactada</label><input id="manual_person"></div>
+<div class="field"><label>Contacto</label><input id="manual_contact"></div>
+<div class="field"><label>Resultado</label><input id="manual_result"></div>
+<div class="field full"><label>Observación / próxima acción</label><textarea id="manual_note"></textarea></div>
+<div class="field full"><button class="btn ghost" id="saveManualCommBtn">Registrar gestión</button></div>
+</div>
+<div id="manualCommResult" class="notice hidden"></div>
 </section>
-<section class="section" data-step="6"><h2>Cierre</h2>
+<section class="section" data-step="6"><h2>Alta Temprana ARCA</h2>
+<div class="help-inline"><button type="button" class="help-btn" onclick="toggleHelp('help_alta_temprana')">Ayuda</button><div class="help-panel" id="help_alta_temprana">Suba la constancia de Alta Temprana emitida por ARCA. Luego envíela al empleador con instrucciones de firma, entrega de copia al trabajador, archivo físico en legajo y carga posterior de la copia firmada.</div></div>
+<div class="intro">Hito crítico del cierre operativo. La constancia de Alta Temprana debe enviarse al empleador y luego debe recibirse la copia firmada.</div>
+<div class="grid">
+<div class="field"><label>ID solicitud</label><input id="alta_request_id"></div>
+<div class="field"><label>Mail empleador</label><input id="alta_employer_email" type="email"></div>
+<div class="field full"><label>Subir Alta Temprana ARCA</label><input type="file" id="alta_file" accept=".pdf,image/*"></div>
+<div class="field full"><label>Texto para enviar al empleador</label><textarea id="alta_mail_body">Estimado cliente:
+
+Adjuntamos/remitimos la constancia de Alta Temprana ARCA.
+
+Instrucciones:
+1. Imprimir la constancia.
+2. Hacerla firmar por el empleado.
+3. Entregar una copia al trabajador.
+4. Conservar una copia física firmada en el legajo del personal.
+5. Escanear o fotografiar la copia firmada y subirla/remitirla al sistema para completar el trámite.
+
+Atentamente.
+Estudio</textarea></div>
+<div class="field"><button type="button" class="btn ghost" id="uploadAltaBtn">Subir Alta Temprana</button></div>
+<div class="field"><button type="button" class="btn" id="sendAltaMailBtn">Enviar al empleador</button></div>
+<div class="field full"><label>Subir copia firmada por empleado</label><input type="file" id="alta_signed_file" accept=".pdf,image/*"></div>
+<div class="field full"><button type="button" class="btn ghost" id="uploadAltaSignedBtn">Subir copia firmada</button></div>
+</div>
+<div id="altaResult" class="notice hidden"></div>
+</section>
+<section class="section" data-step="7"><h2>Cierre</h2>
+<div class="help-inline"><button type="button" class="help-btn" onclick="toggleHelp('help_cierre')">Ayuda</button><div class="help-panel" id="help_cierre">Cierre solo cuando estén completos documentos, PDF, Alta Temprana y copia firmada cuando corresponda.</div></div>
 <div class="grid">
 <div class="field"><label>ID solicitud</label><input id="close_request_id"></div>
 <div class="field"><label>Estado final</label><select id="close_status"><option>Aprobado para revisión</option><option>Cerrado</option><option>Observado</option><option>No apto</option></select></div>
@@ -192,76 +265,19 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
 </section>
 </main></div></div></div>
 <script>
-const APP_VERSION = "v14.0.0";
+const APP_VERSION = "v15.0.0";
 const APP_BUILD_DATE = "2026-05-24";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfM6ATINnhOegwEOW1TBht4fRRiMCMfc8E9m0qITPAu2unkqk1Jp1-rPWvPAU0UTve9Q/exec";
 const FORM_URL = "https://clgest.github.io/auditoria-system/";
-const SECTIONS=["Dashboard","Cliente","Beneficio","Crear link","Lote de altas","Recordatorios","Cierre"];
+const SECTIONS=["Dashboard","Cliente","Beneficio","Crear link","Lote de altas","Centro comunicaciones","Alta Temprana","Cierre"];
 
 const EMPLOYER_CONTROLS = [
-  {
-    id:"cuit_valido",
-    label:"CUIT empleador válido",
-    source:"Control interno",
-    url:"",
-    evidence:"Registro interno"
-  },
-  {
-    id:"arca_empleador",
-    label:"Inscripción como empleador / ARCA",
-    source:"ARCA",
-    url:"https://auth.afip.gob.ar/contribuyente_/login.xhtml",
-    evidence:"Constancia, captura o comprobante de inscripción"
-  },
-  {
-    id:"arca_alta_ya",
-    label:"Servicio Alta Ya / Simplificación Registral",
-    source:"ARCA",
-    url:"https://www.arca.gob.ar/simplificacionregistral/alta-ya/",
-    evidence:"Captura, constancia o confirmación de servicio/delegación"
-  },
-  {
-    id:"art_poliza",
-    label:"ART / Póliza Digital vigente",
-    source:"SRT / e-Servicios",
-    url:"https://www.argentina.gob.ar/srt/polizadigital",
-    evidence:"Póliza, constancia, captura o comprobante"
-  },
-  {
-    id:"art_estado_cuenta",
-    label:"Estado de cuenta / cobertura ART",
-    source:"SRT / ART",
-    url:"https://www.argentina.gob.ar/srt",
-    evidence:"Constancia, captura o comprobante de cobertura"
-  },
-  {
-    id:"repsal_certificado",
-    label:"REPSAL - Certificado",
-    source:"REPSAL",
-    url:"https://www.argentina.gob.ar/trabajo/repsal",
-    evidence:"Certificado descargado en PDF"
-  },
-  {
-    id:"repsal_validacion",
-    label:"REPSAL - Validación web/API",
-    source:"REPSAL",
-    url:"https://repsal.trabajo.gob.ar/api/empleadores",
-    evidence:"Resultado de validación, captura o archivo"
-  },
-  {
-    id:"beneficio_vigente",
-    label:"Beneficio vigente / reglamentado",
-    source:"Catálogo interno",
-    url:"",
-    evidence:"Registro interno del catálogo de beneficios"
-  },
-  {
-    id:"autorizacion_delegacion",
-    label:"Autorización / delegación del cliente",
-    source:"Cliente / ARCA",
-    url:"https://auth.afip.gob.ar/contribuyente_/login.xhtml",
-    evidence:"Mail de autorización, respuesta, captura o constancia"
-  }
+  {id:"arca_empleador", label:"Constancia de Inscripción ARCA / condición de empleador", source:"ARCA", url:"https://auth.afip.gob.ar/contribuyente_/login.xhtml", evidence:"Constancia de inscripción, captura o comprobante del servicio"},
+  {id:"arca_alta_ya", label:"Servicio Alta Ya / Simplificación Registral", source:"ARCA", url:"https://www.arca.gob.ar/simplificacionregistral/alta-ya/", evidence:"Captura, constancia o confirmación de servicio/delegación"},
+  {id:"art_poliza", label:"ART / Póliza Digital vigente", source:"SRT / e-Servicios", url:"https://www.argentina.gob.ar/srt/polizadigital", evidence:"Póliza, constancia, captura o comprobante"},
+  {id:"art_estado_cuenta", label:"Estado de cuenta / cobertura ART", source:"SRT / ART", url:"https://www.argentina.gob.ar/srt", evidence:"Constancia, captura o comprobante de cobertura"},
+  {id:"repsal_certificado", label:"REPSAL - Certificado", source:"REPSAL", url:"https://www.argentina.gob.ar/trabajo/repsal", evidence:"Certificado descargado en PDF"},
+  {id:"autorizacion_delegacion", label:"Autorización / delegación del cliente", source:"Cliente / ARCA", url:"https://auth.afip.gob.ar/contribuyente_/login.xhtml", evidence:"Mail de autorización, respuesta, captura o constancia"}
 ];
 let EMPLOYER_CONTROL_FILES = {};
 
@@ -328,6 +344,8 @@ function getSelectedBenefitPayload(){
   };
 }
 
+function toggleHelp(id){ const el=document.getElementById(id); if(el) el.classList.toggle("open"); }
+
 function bind(){
   qs("#refreshDash").onclick=loadDashboard;
   qs("#filterClient").oninput=applyDashboardFilters;
@@ -341,7 +359,14 @@ function bind(){
   qs("#createBtn").onclick=createRequest;
   qs("#prepareBatchBtn").onclick=prepareBatch;
   qs("#createBatchBtn").onclick=createBatch;
-  qs("#sendReminderBtn").onclick=sendReminder;
+  qs("#sendReminderBtn").onclick=sendCommunication;
+  qs("#saveManualCommBtn").onclick=saveManualCommunication;
+  qs("#newBenefitBtn").onclick=newBenefit;
+  qs("#saveBenefitBtn").onclick=saveBenefit;
+  qs("#inactiveBenefitBtn").onclick=inactiveBenefit;
+  qs("#uploadAltaBtn").onclick=uploadAltaTemprana;
+  qs("#sendAltaMailBtn").onclick=sendAltaTempranaMail;
+  qs("#uploadAltaSignedBtn").onclick=uploadAltaTempranaFirmada;
   qs("#closeBtn").onclick=closeRequest;
 }
 async function post(action,payload){if(APPS_SCRIPT_URL.includes("PEGAR_AQUI"))throw new Error("Falta configurar APPS_SCRIPT_URL.");const r=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,payload})});const txt=await r.text();let j;try{j=JSON.parse(txt)}catch{j={ok:true,message:txt}}if(!j.ok)throw new Error(j.error||"Error");return j}
@@ -665,6 +690,148 @@ async function cancelReq(id){
 }
 
 async function sendReminder(){const box=qs("#remResult");box.className="notice warn";box.textContent="Enviando...";box.classList.remove("hidden");try{await post("sendReminder",{request_id:qs("#rem_request_id").value,to:qs("#rem_to").value,reason:qs("#rem_reason").value,note:qs("#rem_note").value});box.className="notice ok";box.textContent="Recordatorio registrado/enviado."}catch(e){box.className="notice bad";box.textContent=e.message}}
+
+function getSelectedBenefitForm(){
+  return {
+    id_beneficio: qs("#benefit_id").value || "",
+    nombre: qs("#benefit_id").selectedOptions?.[0]?.textContent || qs("#benefit_id").value || "",
+    norma: qs("#benefit_norma")?.value || "",
+    estado: qs("#benefit_status")?.value || "",
+    inicio_vigencia: qs("#benefit_start")?.value || "",
+    fin_vigencia: qs("#benefit_end")?.value || "",
+    dias_alerta_previa: qs("#benefit_alert_days")?.value || "30",
+    descripcion: qs("#benefit_description")?.value || "",
+    requisitos: qs("#benefit_requisitos")?.value || "",
+    documentacion: qs("#benefit_docs")?.value || "",
+    ddjj: qs("#benefit_ddjj")?.value || "",
+    riesgo: qs("#benefit_risk")?.value || "",
+    permite_solicitud: qs("#benefit_permite")?.value || "SI",
+    requiere_revision: qs("#benefit_revision")?.value || "NO",
+    activo: qs("#benefit_active")?.value || "SI"
+  };
+}
+
+function newBenefit(){
+  const name = prompt("Nombre del nuevo beneficio:");
+  if(!name) return;
+  const id = "BEN-" + Date.now();
+  const opt = document.createElement("option");
+  opt.value = id;
+  opt.textContent = name;
+  qs("#benefit_id").appendChild(opt);
+  qs("#benefit_id").value = id;
+  ["benefit_norma","benefit_start","benefit_end","benefit_description","benefit_requisitos","benefit_docs","benefit_ddjj","benefit_risk"].forEach(id=>{ const el=qs("#"+id); if(el) el.value=""; });
+  qs("#benefit_status").value = "operativo";
+  qs("#benefit_alert_days").value = "30";
+  qs("#benefit_active").value = "SI";
+  qs("#benefit_permite").value = "SI";
+  qs("#benefit_revision").value = "NO";
+  updateBenefitAlert();
+}
+
+async function saveBenefit(){
+  const box = qs("#benefitResult");
+  box.className = "notice warn"; box.textContent = "Guardando beneficio..."; box.classList.remove("hidden");
+  try{ await post("saveBenefit", getSelectedBenefitForm()); box.className = "notice ok"; box.textContent = "Beneficio guardado correctamente."; await loadBenefitDashboard(); }
+  catch(e){ box.className = "notice bad"; box.textContent = e.message; }
+}
+
+async function inactiveBenefit(){
+  const id = qs("#benefit_id").value;
+  if(!id){ alert("Seleccione beneficio."); return; }
+  if(!confirm("Inactivar beneficio seleccionado?")) return;
+  const box = qs("#benefitResult");
+  box.className = "notice warn"; box.textContent = "Inactivando beneficio..."; box.classList.remove("hidden");
+  try{ await post("inactivateBenefit", { id_beneficio:id, note:"Inactivado desde panel" }); qs("#benefit_active").value = "NO"; qs("#benefit_status").value = "inactivo"; box.className = "notice ok"; box.textContent = "Beneficio inactivado."; await loadBenefitDashboard(); }
+  catch(e){ box.className = "notice bad"; box.textContent = e.message; }
+}
+
+async function loadBenefitDashboard(){
+  try{
+    if(APPS_SCRIPT_URL.includes("PEGAR_AQUI")) return;
+    const r = await fetch(APPS_SCRIPT_URL + "?action=getBenefitDashboard");
+    const j = await r.json();
+    if(!j.ok) return;
+    if(qs("#b_vigentes")) qs("#b_vigentes").textContent = j.vigentes || 0;
+    if(qs("#b_proximos")) qs("#b_proximos").textContent = j.proximos || 0;
+    if(qs("#b_vencidos")) qs("#b_vencidos").textContent = j.vencidos || 0;
+    if(qs("#b_pendientes")) qs("#b_pendientes").textContent = (j.pendientes || 0) + (j.inactivos || 0) + (j.no_operativos || 0);
+  }catch(e){}
+}
+
+async function filesToPayload(fileList){
+  const out = [];
+  for(const file of Array.from(fileList || [])){
+    const b64 = await fileToBase64Panel(file);
+    out.push({ filename:file.name, mimeType:file.type || "application/octet-stream", base64:b64.split(",")[1] });
+  }
+  return out;
+}
+
+async function sendCommunication(){
+  const box=qs("#remResult");
+  box.className="notice warn";box.textContent="Enviando comunicación...";box.classList.remove("hidden");
+  try{
+    const attachments = await filesToPayload(qs("#comm_files")?.files || []);
+    const payload = {
+      request_id: qs("#rem_request_id").value,
+      destinatario_tipo: qs("#rem_to").value,
+      to: qs("#comm_custom_email").value,
+      subject: qs("#comm_subject").value || ("Comunicación e-Up RRHH - " + qs("#rem_reason").value),
+      motivo: qs("#rem_reason").value,
+      body: qs("#rem_note").value,
+      attachments
+    };
+    if(!payload.to && payload.destinatario_tipo !== "custom"){
+      const detailId = qs("#rem_request_id").value;
+      if(detailId){
+        const r = await fetch(APPS_SCRIPT_URL + "?action=getRequestDetail&request_id=" + encodeURIComponent(detailId));
+        const j = await r.json();
+        if(j.ok){ payload.to = payload.destinatario_tipo === "applicant" ? (j.request.email_postulante || "") : (j.request.email_empleador || ""); }
+      }
+    }
+    await post("sendCommunication", payload);
+    box.className="notice ok"; box.textContent="Comunicación enviada y registrada.";
+  }catch(e){ box.className="notice bad"; box.textContent=e.message; }
+}
+
+async function saveManualCommunication(){
+  const box=qs("#manualCommResult");
+  box.className="notice warn";box.textContent="Registrando gestión...";box.classList.remove("hidden");
+  try{
+    await post("saveCommunicationLog", { request_id: qs("#rem_request_id").value, medio: qs("#manual_medium").value, persona: qs("#manual_person").value, contacto: qs("#manual_contact").value, resultado: qs("#manual_result").value, observacion: qs("#manual_note").value });
+    box.className="notice ok"; box.textContent="Gestión registrada.";
+  }catch(e){ box.className="notice bad"; box.textContent=e.message; }
+}
+
+async function uploadAltaTemprana(){ await uploadAltaFile(false); }
+async function uploadAltaTempranaFirmada(){ await uploadAltaFile(true); }
+
+async function uploadAltaFile(signed){
+  const box = qs("#altaResult");
+  const input = signed ? qs("#alta_signed_file") : qs("#alta_file");
+  if(!qs("#alta_request_id").value){ alert("Indique ID de solicitud."); return; }
+  if(!input.files || !input.files[0]){ alert("Seleccione archivo."); return; }
+  box.className="notice warn"; box.textContent="Subiendo archivo..."; box.classList.remove("hidden");
+  try{
+    const file = input.files[0];
+    const b64 = await fileToBase64Panel(file);
+    const action = signed ? "uploadAltaTempranaFirmada" : "uploadAltaTemprana";
+    const j = await post(action, { request_id: qs("#alta_request_id").value, filename: file.name, mimeType: file.type || "application/octet-stream", base64: b64.split(",")[1] });
+    box.className="notice ok"; box.innerHTML = `Archivo subido. ${j.file_url ? `<a target="_blank" href="${esc(j.file_url)}">Abrir</a>` : ""}`;
+  }catch(e){ box.className="notice bad"; box.textContent=e.message; }
+}
+
+async function sendAltaTempranaMail(){
+  const box = qs("#altaResult");
+  box.className="notice warn"; box.textContent="Enviando Alta Temprana..."; box.classList.remove("hidden");
+  try{
+    await post("sendAltaTempranaMail", { request_id: qs("#alta_request_id").value, to: qs("#alta_employer_email").value, body: qs("#alta_mail_body").value });
+    box.className="notice ok"; box.textContent="Alta Temprana enviada al empleador.";
+  }catch(e){ box.className="notice bad"; box.textContent=e.message; }
+}
+
+
 async function closeRequest(){const box=qs("#closeResult");box.className="notice warn";box.textContent="Registrando...";box.classList.remove("hidden");try{await post("updateRequestStatus",{request_id:qs("#close_request_id").value,status:qs("#close_status").value,note:qs("#close_note").value});box.className="notice ok";box.textContent="Estado actualizado."}catch(e){box.className="notice bad";box.textContent=e.message}}
 
 function setViewMode(mode){
@@ -688,7 +855,7 @@ function initViewMode(){
   if(m) m.onclick = () => setViewMode("mobile");
 }
 
-console.log("e-Up RRHH panel v14.0.0 - 2026-05-24");
+console.log("e-Up RRHH panel v15.0.0 - 2026-05-24");
 initViewMode();
 init();
 </script>
