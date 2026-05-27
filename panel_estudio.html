@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- e-Up RRHH Panel del Estudio | VERSION v16.0.0 | 2026-05-24 -->
+<!-- e-Up RRHH Panel del Estudio | VERSION v17.0.0 | 2026-05-27 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -88,7 +88,7 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
     <button type="button" id="viewModeDesktop">Vista escritorio</button>
     <button type="button" id="viewModeMobile">Vista celular</button>
   </div>
-  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v16.0.0</span>
+  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v17.0.0</span>
 </div></div></div>
 <div class="wrap"><div class="paper">
 <div class="doc-head"><div class="doc-title">Panel del Estudio</div><p class="hint center">Crear solicitud, seleccionar beneficio, generar token, enviar mail al empleador, controlar estado y cerrar trámite.</p></div>
@@ -265,8 +265,8 @@ Estudio</textarea></div>
 </section>
 </main></div></div></div>
 <script>
-const APP_VERSION = "v16.0.0";
-const APP_BUILD_DATE = "2026-05-24";
+const APP_VERSION = "v17.0.0";
+const APP_BUILD_DATE = "2026-05-27";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt3ezc7-m7lXcQTwfUfAaAkU-tkipho7JYko4bdsoRmruzON43Y8Rp2_klo8LTzX6O/exec";
 const FORM_URL = "https://clgest.github.io/auditoria-system/";
 const SECTIONS=["Dashboard","Cliente","Beneficio","Crear link","Lote de altas","Centro comunicaciones","Alta Temprana","Cierre"];
@@ -292,6 +292,48 @@ function digits(v){return String(v||"").replace(/\D/g,"")}
 function cuitOk(v){const s=digits(v);if(s.length!==11)return false;const w=[5,4,3,2,7,6,5,4,3,2];const sum=s.slice(0,10).split("").reduce((a,n,i)=>a+Number(n)*w[i],0);const mod=11-(sum%11);const dv=mod===11?0:mod===10?9:mod;return dv===Number(s[10])}
 function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
 function randomToken(){const arr=new Uint8Array(18);crypto.getRandomValues(arr);return Array.from(arr).map(b=>b.toString(16).padStart(2,"0")).join("")}
+
+function renderNav(){
+  const nav = qs("#nav");
+  if(!nav) return;
+  nav.innerHTML = SECTIONS.map((s,i)=>`<button type="button" class="${i===current?'active':''}" data-j="${i}">${s}</button>`).join("");
+  qsa("[data-j]").forEach(b => {
+    b.onclick = () => {
+      current = Number(b.dataset.j);
+      renderSection();
+    };
+  });
+}
+
+function renderSection(){
+  qsa(".section").forEach((s,i)=>s.classList.toggle("active", i===current));
+  renderNav();
+}
+
+function renderBenefit(){
+  const benefitSelect = qs("#benefit_id");
+  const id = benefitSelect ? benefitSelect.value : "";
+  const b = BENEFITS.find(x=>x.id===id || x.id_beneficio===id) || BENEFITS[0] || {};
+  const set = (id,v) => {
+    const el = qs("#" + id);
+    if(el) el.value = v || "";
+  };
+  set("benefit_status", b.estado || b.status || "operativo");
+  set("benefit_start", b.inicio_vigencia || "");
+  set("benefit_end", b.fin_vigencia || "");
+  set("benefit_alert_days", b.dias_alerta_previa || "30");
+  set("benefit_norma", b.norma || "");
+  set("benefit_active", b.activo || "SI");
+  set("benefit_description", b.descripcion || b.description || "");
+  set("benefit_requisitos", b.requisitos || b.description || "");
+  set("benefit_docs", b.documentacion || b.docs || "");
+  set("benefit_ddjj", b.ddjj || "");
+  set("benefit_risk", b.riesgo || b.risk || "");
+  set("benefit_permite", b.permite_solicitud || "SI");
+  set("benefit_revision", b.requiere_revision || "NO");
+  updateBenefitAlert();
+}
+
 function init(){
   try{
     const benefitSelect = qs("#benefit_id");
@@ -953,7 +995,7 @@ function initViewMode(){
   if(m) m.onclick = () => setViewMode("mobile");
 }
 
-console.log("e-Up RRHH panel v16.0.0 - 2026-05-24");
+console.log("e-Up RRHH panel v17.0.0 - 2026-05-27");
 initViewMode();
 init();
 </script>
