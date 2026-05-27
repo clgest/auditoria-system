@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- e-Up RRHH Panel del Estudio | VERSION v15.2.0 | 2026-05-24 -->
+<!-- e-Up RRHH Panel del Estudio | VERSION v16.0.0 | 2026-05-24 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -88,7 +88,7 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
     <button type="button" id="viewModeDesktop">Vista escritorio</button>
     <button type="button" id="viewModeMobile">Vista celular</button>
   </div>
-  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v15.2.0</span>
+  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v16.0.0</span>
 </div></div></div>
 <div class="wrap"><div class="paper">
 <div class="doc-head"><div class="doc-title">Panel del Estudio</div><p class="hint center">Crear solicitud, seleccionar beneficio, generar token, enviar mail al empleador, controlar estado y cerrar trámite.</p></div>
@@ -265,10 +265,10 @@ Estudio</textarea></div>
 </section>
 </main></div></div></div>
 <script>
-const APP_VERSION = "v15.2.0";
+const APP_VERSION = "v16.0.0";
 const APP_BUILD_DATE = "2026-05-24";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt3ezc7-m7lXcQTwfUfAaAkU-tkipho7JYko4bdsoRmruzON43Y8Rp2_klo8LTzX6O/exec";
-const FORM_URL = "https://clgest.github.io/auditoria-system/panel_estudio.html";
+const FORM_URL = "https://clgest.github.io/auditoria-system/";
 const SECTIONS=["Dashboard","Cliente","Beneficio","Crear link","Lote de altas","Centro comunicaciones","Alta Temprana","Cierre"];
 
 const EMPLOYER_CONTROLS = [
@@ -292,27 +292,20 @@ function digits(v){return String(v||"").replace(/\D/g,"")}
 function cuitOk(v){const s=digits(v);if(s.length!==11)return false;const w=[5,4,3,2,7,6,5,4,3,2];const sum=s.slice(0,10).split("").reduce((a,n,i)=>a+Number(n)*w[i],0);const mod=11-(sum%11);const dv=mod===11?0:mod===10?9:mod;return dv===Number(s[10])}
 function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
 function randomToken(){const arr=new Uint8Array(18);crypto.getRandomValues(arr);return Array.from(arr).map(b=>b.toString(16).padStart(2,"0")).join("")}
-function init(){qs("#benefit_id").innerHTML=BENEFITS.map(b=>`<option value="${b.id}">${b.name}</option>`).join("");qs("#benefit_id").onchange=renderBenefit;renderBenefit();renderNav();bind();renderEmployerChecklist();loadDashboard()}
-function renderNav(){qs("#nav").innerHTML=SECTIONS.map((s,i)=>`<button type="button" class="${i===current?'active':''}" data-j="${i}">${s}</button>`).join("");qsa("[data-j]").forEach(b=>b.onclick=()=>{current=Number(b.dataset.j);renderSection()})}
-function renderSection(){qsa(".section").forEach((s,i)=>s.classList.toggle("active",i===current));renderNav()}
-function renderBenefit(){
-  const id = qs("#benefit_id").value;
-  const b = BENEFITS.find(x=>x.id===id || x.id_beneficio===id) || BENEFITS[0] || {};
-  const set = (id,v)=>{ const el=qs("#"+id); if(el) el.value = v || ""; };
-  set("benefit_status", b.estado || b.status || "operativo");
-  set("benefit_start", b.inicio_vigencia || "");
-  set("benefit_end", b.fin_vigencia || "");
-  set("benefit_alert_days", b.dias_alerta_previa || "30");
-  set("benefit_norma", b.norma || "");
-  set("benefit_active", b.activo || "SI");
-  set("benefit_description", b.descripcion || b.description || "");
-  set("benefit_requisitos", b.requisitos || b.description || "");
-  set("benefit_docs", b.documentacion || b.docs || "");
-  set("benefit_ddjj", b.ddjj || "");
-  set("benefit_risk", b.riesgo || b.risk || "");
-  set("benefit_permite", b.permite_solicitud || "SI");
-  set("benefit_revision", b.requiere_revision || "NO");
-  updateBenefitAlert();
+function init(){
+  try{
+    const benefitSelect = qs("#benefit_id");
+    if(benefitSelect){
+      benefitSelect.innerHTML = BENEFITS.map(b=>`<option value="${b.id||b.id_beneficio}">${b.name||b.nombre}</option>`).join("");
+      benefitSelect.onchange = renderBenefit;
+    }
+    renderBenefit();
+  }catch(e){ console.error("Error inicializando beneficios", e); }
+  try{ renderNav(); }catch(e){ console.error("Error renderNav", e); }
+  try{ bind(); }catch(e){ console.error("Error bind", e); }
+  try{ renderEmployerChecklist(); }catch(e){ console.error("Error checklist", e); }
+  try{ loadBenefitDashboard(); }catch(e){ console.error("Error benefit dashboard", e); }
+  try{ loadDashboard(); }catch(e){ console.error("Error dashboard", e); }
 }
 
 function updateBenefitAlert(){
@@ -380,7 +373,7 @@ function toggleHelp(id){ const el=document.getElementById(id); if(el) el.classLi
 function bind(){
   const on = (id, fn, ev="onclick") => {
     const el = qs("#" + id);
-    if(el) el[ev] = fn;
+    if(el && typeof fn === "function") el[ev] = fn;
   };
   on("refreshDash", loadDashboard);
   on("filterClient", applyDashboardFilters, "oninput");
@@ -411,6 +404,32 @@ function buildLocalLink(token){
     : location.href.replace(/panel_estudio\.html.*/,"index.html");
   const b = getSelectedBenefitPayload();
   return `${base}?token=${encodeURIComponent(token)}&ecuit=${encodeURIComponent(digits(qs("#employer_cuit").value))}&ename=${encodeURIComponent(qs("#employer_name").value.trim())}&benefit=${encodeURIComponent(b.name || b.nombre || "")}&req=${encodeURIComponent(b.description || b.descripcion || b.requisitos || "")}`;
+}
+
+let DASHBOARD_ROWS = [];
+
+async function loadDashboard(){
+  const table = qs("#dashTable");
+  if(table){
+    table.innerHTML = "<tr><th>ID</th><th>Cliente</th><th>Estado</th><th>Beneficio</th><th>Alerta beneficio</th><th>Acciones</th></tr><tr><td colspan='6'>Cargando dashboard...</td></tr>";
+  }
+  try{
+    if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("PEGAR_AQUI")){
+      DASHBOARD_ROWS = [];
+      applyDashboardFilters();
+      return;
+    }
+    const r = await fetch(APPS_SCRIPT_URL + "?action=listRequests");
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error || "No se pudo cargar el dashboard.");
+    DASHBOARD_ROWS = j.requests || [];
+    applyDashboardFilters();
+  }catch(e){
+    DASHBOARD_ROWS = [];
+    if(table){
+      table.innerHTML = "<tr><th>ID</th><th>Cliente</th><th>Estado</th><th>Beneficio</th><th>Alerta beneficio</th><th>Acciones</th></tr><tr><td colspan='6'>No se pudo cargar dashboard: " + esc(e.message) + "</td></tr>";
+    }
+  }
 }
 
 function isDeletedStatus(status){
@@ -445,12 +464,15 @@ function applyDashboardFilters(){
   renderRows(rows);
 }
 function renderRows(rows){
-  const activeRows = DASHBOARD_ROWS.filter(r=>!isDeletedStatus(r.status));
-  qs("#k_open").textContent=activeRows.filter(r=>!["Cerrado","cancelled"].includes(r.status)).length;
-  qs("#k_docs").textContent=activeRows.filter(r=>String(r.status).toLowerCase().includes("documentación")).length;
-  qs("#k_due").textContent=activeRows.filter(r=>r.due_soon).length;
-  qs("#k_closed").textContent=activeRows.filter(r=>r.status==="Cerrado").length;
-  qs("#dashTable").innerHTML="<tr><th>ID</th><th>Cliente</th><th>Estado</th><th>Beneficio</th><th>Alerta beneficio</th><th>Acciones</th></tr>"+
+  rows = Array.isArray(rows) ? rows : [];
+  const activeRows = (Array.isArray(DASHBOARD_ROWS) ? DASHBOARD_ROWS : []).filter(r=>!isDeletedStatus(r.status));
+  if(qs("#k_open")) qs("#k_open").textContent=activeRows.filter(r=>!["Cerrado","cancelled"].includes(r.status)).length;
+  if(qs("#k_docs")) qs("#k_docs").textContent=activeRows.filter(r=>String(r.status).toLowerCase().includes("documentación")).length;
+  if(qs("#k_due")) qs("#k_due").textContent=activeRows.filter(r=>r.due_soon).length;
+  if(qs("#k_closed")) qs("#k_closed").textContent=activeRows.filter(r=>r.status==="Cerrado").length;
+  const table = qs("#dashTable");
+  if(!table) return;
+  table.innerHTML="<tr><th>ID</th><th>Cliente</th><th>Estado</th><th>Beneficio</th><th>Alerta beneficio</th><th>Acciones</th></tr>"+
   (rows.length ? rows.map(r=>{
     const id = esc(r.id || "");
     const link = esc(r.link || "");
@@ -508,9 +530,11 @@ function collectBatchRows(){
 async function createRequest(){
   const box = qs("#createResult");
   let link = "";
-  box.className = "notice warn";
-  box.textContent = "Procesando...";
-  box.classList.remove("hidden");
+  if(box){
+    box.className = "notice warn";
+    box.textContent = "Procesando...";
+    box.classList.remove("hidden");
+  }
   try{
     if(!cuitOk(qs("#employer_cuit").value)) throw new Error("CUIT empleador inválido.");
     if(!qs("#employer_name").value.trim()) throw new Error("Falta razón social del empleador.");
@@ -522,8 +546,7 @@ async function createRequest(){
     link = buildLocalLink(token);
     qs("#generated_link").value = link;
     const payload = {
-      token: token,
-      link: link,
+      token, link,
       employer_cuit: digits(qs("#employer_cuit").value),
       employer_name: qs("#employer_name").value.trim(),
       employer_email: qs("#employer_email").value.trim(),
@@ -536,13 +559,17 @@ async function createRequest(){
       status: "Mail enviado al empleador"
     };
     const j = await post("createRequestToken", payload);
-    box.className = "notice ok";
-    box.innerHTML = `Solicitud creada y mail enviado.<br>ID: <strong>${esc(j.request_id || "registrado")}</strong>`;
+    if(box){
+      box.className = "notice ok";
+      box.innerHTML = `Solicitud creada y mail enviado.<br>ID: <strong>${esc(j.request_id || "registrado")}</strong>`;
+    }
     await loadDashboard();
     await loadBenefitDashboard();
   }catch(e){
-    box.className = "notice bad";
-    box.innerHTML = `No se pudo crear la solicitud: ${esc(e.message)}${link ? `<br>Link local generado: <span class="mono">${esc(link)}</span>` : ""}`;
+    if(box){
+      box.className = "notice bad";
+      box.innerHTML = `No se pudo crear la solicitud: ${esc(e.message)}${link ? `<br>Link local generado: <span class="mono">${esc(link)}</span>` : ""}`;
+    }
   }
 }
 
@@ -592,7 +619,8 @@ function currentEmployerCuit(){
 function renderEmployerChecklist(){
   const body = qs("#employerChecklistBody");
   if(!body) return;
-  body.innerHTML = EMPLOYER_CONTROLS.map(c => `
+  const rows = Array.isArray(EMPLOYER_CONTROLS) ? EMPLOYER_CONTROLS : [];
+  body.innerHTML = rows.map(c => `
     <tr>
       <td><strong>${esc(c.label)}</strong><div class="help">${esc(c.evidence || "")}</div></td>
       <td>
@@ -618,7 +646,9 @@ function renderEmployerChecklist(){
       <td><textarea data-control-observation="${c.id}" placeholder="Observación del operador"></textarea></td>
     </tr>
   `).join("");
-
+  if(!rows.length){
+    body.innerHTML = "<tr><td colspan='5'>Checklist no disponible. Revise la versión del panel.</td></tr>";
+  }
   document.querySelectorAll("[data-control-file]").forEach(input => {
     input.onchange = () => {
       const id = input.dataset.controlFile;
@@ -923,7 +953,7 @@ function initViewMode(){
   if(m) m.onclick = () => setViewMode("mobile");
 }
 
-console.log("e-Up RRHH panel v15.2.0 - 2026-05-24");
+console.log("e-Up RRHH panel v16.0.0 - 2026-05-24");
 initViewMode();
 init();
 </script>
