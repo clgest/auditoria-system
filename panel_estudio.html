@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- e-Up RRHH Panel del Estudio | VERSION v15.0.0 | 2026-05-24 -->
+<!-- e-Up RRHH Panel del Estudio | VERSION v15.1.0 | 2026-05-24 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -88,7 +88,7 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
     <button type="button" id="viewModeDesktop">Vista escritorio</button>
     <button type="button" id="viewModeMobile">Vista celular</button>
   </div>
-  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v15.0.0</span>
+  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v15.1.0</span>
 </div></div></div>
 <div class="wrap"><div class="paper">
 <div class="doc-head"><div class="doc-title">Panel del Estudio</div><p class="hint center">Crear solicitud, seleccionar beneficio, generar token, enviar mail al empleador, controlar estado y cerrar trámite.</p></div>
@@ -265,10 +265,10 @@ Estudio</textarea></div>
 </section>
 </main></div></div></div>
 <script>
-const APP_VERSION = "v15.0.0";
+const APP_VERSION = "v15.1.0";
 const APP_BUILD_DATE = "2026-05-24";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt3ezc7-m7lXcQTwfUfAaAkU-tkipho7JYko4bdsoRmruzON43Y8Rp2_klo8LTzX6O/exec";
-const FORM_URL = "https://clgest.github.io/auditoria-system/";
+const FORM_URL = "https://clgest.github.io/auditoria-system/panel_estudio.html";
 const SECTIONS=["Dashboard","Cliente","Beneficio","Crear link","Lote de altas","Centro comunicaciones","Alta Temprana","Cierre"];
 
 const EMPLOYER_CONTROLS = [
@@ -296,14 +296,22 @@ function init(){qs("#benefit_id").innerHTML=BENEFITS.map(b=>`<option value="${b.
 function renderNav(){qs("#nav").innerHTML=SECTIONS.map((s,i)=>`<button type="button" class="${i===current?'active':''}" data-j="${i}">${s}</button>`).join("");qsa("[data-j]").forEach(b=>b.onclick=()=>{current=Number(b.dataset.j);renderSection()})}
 function renderSection(){qsa(".section").forEach((s,i)=>s.classList.toggle("active",i===current));renderNav()}
 function renderBenefit(){
-  const b=BENEFITS.find(x=>x.id===qs("#benefit_id").value)||BENEFITS[0];
-  qs("#benefit_status").value=b.status;
-  qs("#benefit_start").value=b.inicio_vigencia || "";
-  qs("#benefit_end").value=b.fin_vigencia || "";
-  qs("#benefit_alert_days").value=b.dias_alerta_previa || "30";
-  qs("#benefit_description").value=b.description;
-  qs("#benefit_docs").value=b.docs;
-  qs("#benefit_risk").value=b.risk;
+  const id = qs("#benefit_id").value;
+  const b = BENEFITS.find(x=>x.id===id || x.id_beneficio===id) || BENEFITS[0] || {};
+  const set = (id,v)=>{ const el=qs("#"+id); if(el) el.value = v || ""; };
+  set("benefit_status", b.estado || b.status || "operativo");
+  set("benefit_start", b.inicio_vigencia || "");
+  set("benefit_end", b.fin_vigencia || "");
+  set("benefit_alert_days", b.dias_alerta_previa || "30");
+  set("benefit_norma", b.norma || "");
+  set("benefit_active", b.activo || "SI");
+  set("benefit_description", b.descripcion || b.description || "");
+  set("benefit_requisitos", b.requisitos || b.description || "");
+  set("benefit_docs", b.documentacion || b.docs || "");
+  set("benefit_ddjj", b.ddjj || "");
+  set("benefit_risk", b.riesgo || b.risk || "");
+  set("benefit_permite", b.permite_solicitud || "SI");
+  set("benefit_revision", b.requiere_revision || "NO");
   updateBenefitAlert();
 }
 
@@ -334,13 +342,34 @@ function updateBenefitAlert(){
 }
 
 function getSelectedBenefitPayload(){
-  const b = getSelectedBenefitPayload();
+  const id = qs("#benefit_id").value || "";
+  const optText = qs("#benefit_id").selectedOptions && qs("#benefit_id").selectedOptions[0] ? qs("#benefit_id").selectedOptions[0].textContent : id;
+  const base = BENEFITS.find(x=>x.id===id || x.id_beneficio===id) || {};
+  const get = id => (qs("#"+id) ? qs("#"+id).value : "");
   return {
-    ...b,
-    inicio_vigencia: qs("#benefit_start").value || "",
-    fin_vigencia: qs("#benefit_end").value || "",
-    dias_alerta_previa: qs("#benefit_alert_days").value || "",
-    alerta_vigencia: qs("#benefit_alert").value || ""
+    ...base,
+    id: id,
+    id_beneficio: id,
+    name: optText,
+    nombre: optText,
+    status: get("benefit_status") || base.status || base.estado || "",
+    estado: get("benefit_status") || base.estado || base.status || "",
+    inicio_vigencia: get("benefit_start"),
+    fin_vigencia: get("benefit_end"),
+    dias_alerta_previa: get("benefit_alert_days") || "30",
+    alerta_vigencia: get("benefit_alert"),
+    norma: get("benefit_norma"),
+    activo: get("benefit_active") || "SI",
+    description: get("benefit_description") || get("benefit_requisitos"),
+    descripcion: get("benefit_description"),
+    requisitos: get("benefit_requisitos"),
+    docs: get("benefit_docs"),
+    documentacion: get("benefit_docs"),
+    ddjj: get("benefit_ddjj"),
+    risk: get("benefit_risk"),
+    riesgo: get("benefit_risk"),
+    permite_solicitud: get("benefit_permite") || "SI",
+    requiere_revision: get("benefit_revision") || "NO"
   };
 }
 
@@ -370,21 +399,10 @@ function bind(){
   qs("#closeBtn").onclick=closeRequest;
 }
 async function post(action,payload){if(APPS_SCRIPT_URL.includes("PEGAR_AQUI"))throw new Error("Falta configurar APPS_SCRIPT_URL.");const r=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,payload})});const txt=await r.text();let j;try{j=JSON.parse(txt)}catch{j={ok:true,message:txt}}if(!j.ok)throw new Error(j.error||"Error");return j}
-function buildLocalLink(token){const base=FORM_URL.includes("PEGAR_AQUI")?location.href.replace(/panel_estudio\.html.*/,"index.html"):FORM_URL;const b=getSelectedBenefitPayload();return `${base}?token=${encodeURIComponent(token)}&ecuit=${encodeURIComponent(digits(qs("#employer_cuit").value))}&ename=${encodeURIComponent(qs("#employer_name").value.trim())}&benefit=${encodeURIComponent(b.name)}&req=${encodeURIComponent(b.description)}`}
-async function createRequest(){const box=qs("#createResult");box.className="notice warn";box.textContent="Procesando...";box.classList.remove("hidden");if(!cuitOk(qs("#employer_cuit").value)){box.className="notice bad";box.textContent="CUIT empleador inválido.";return}const b=getSelectedBenefitPayload();const token=randomToken();const link=buildLocalLink(token);qs("#generated_link").value=link;const payload={token,link,employer_cuit:digits(qs("#employer_cuit").value),employer_name:qs("#employer_name").value.trim(),employer_email:qs("#employer_email").value.trim(),employer_contact:qs("#employer_contact").value.trim(),employer_phone:qs("#employer_phone").value.trim(),benefit:b,entry_date:qs("#entry_date").value,position_title:qs("#position_title").value,study_notes:qs("#study_notes").value,status:"Mail enviado al empleador"};try{const j=await post("createRequestToken",payload);box.className="notice ok";box.innerHTML=`Solicitud creada y mail enviado.<br>ID: <strong>${esc(j.request_id||"registrado")}</strong>`}catch(e){box.className="notice bad";box.innerHTML=`No se pudo confirmar en Apps Script: ${esc(e.message)}<br>Link local generado: <span class="mono">${esc(link)}</span>`}}
-let DASHBOARD_ROWS = [];
-
-async function loadDashboard(){
-  const table=qs("#dashTable");
-  table.innerHTML="<tr><th>ID</th><th>Cliente</th><th>Estado</th><th>Beneficio</th><th>Alerta beneficio</th><th>Acciones</th></tr><tr><td colspan='6'>Dashboard operativo cuando Code.gs exponga listRequests.</td></tr>";
-  try{
-    if(APPS_SCRIPT_URL.includes("PEGAR_AQUI"))return;
-    const r=await fetch(APPS_SCRIPT_URL+"?action=listRequests");
-    const j=await r.json();
-    if(!j.ok)return;
-    DASHBOARD_ROWS = j.requests || [];
-    applyDashboardFilters();
-  }catch(e){}
+function buildLocalLink(token){
+  const base=FORM_URL.includes("PEGAR_AQUI")?location.href.replace(/panel_estudio\.html.*/,"index.html"):FORM_URL;
+  const b=getSelectedBenefitPayload();
+  return `${base}?token=${encodeURIComponent(token)}&ecuit=${encodeURIComponent(digits(qs("#employer_cuit").value))}&ename=${encodeURIComponent(qs("#employer_name").value.trim())}&benefit=${encodeURIComponent(b.name||b.nombre||"")}&req=${encodeURIComponent(b.description||b.descripcion||b.requisitos||"")}`;
 }
 
 function isDeletedStatus(status){
@@ -855,7 +873,7 @@ function initViewMode(){
   if(m) m.onclick = () => setViewMode("mobile");
 }
 
-console.log("e-Up RRHH panel v15.0.0 - 2026-05-24");
+console.log("e-Up RRHH panel v15.1.0 - 2026-05-24");
 initViewMode();
 init();
 </script>
