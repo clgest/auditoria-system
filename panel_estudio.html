@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- e-Up RRHH Panel del Estudio | VERSION v17.1.1 | 2026-05-27 -->
+<!-- e-Up RRHH Panel del Estudio | VERSION v17.1.3 | 2026-05-27 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -88,7 +88,7 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
     <button type="button" id="viewModeDesktop">Vista escritorio</button>
     <button type="button" id="viewModeMobile">Vista celular</button>
   </div>
-  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v17.1.1</span>
+  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v17.1.3</span>
 </div></div></div>
 <div class="wrap"><div class="paper">
 <div class="doc-head"><div class="doc-title">Panel del Estudio</div><p class="hint center">Crear solicitud, seleccionar beneficio, generar token, enviar mail al empleador, controlar estado y cerrar trámite.</p></div>
@@ -114,6 +114,19 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
 <section class="section" data-step="1"><h2>Cliente empleador</h2>
 <div class="help-inline"><button type="button" class="help-btn" onclick="toggleHelp('help_cliente')">Ayuda</button><div class="help-panel" id="help_cliente">Cargue el cliente y use el checklist para verificar ARCA, ART, REPSAL certificado y autorizaciones. Descargue constancias y súbalas como evidencia.</div></div>
 <div class="intro">Cargue el cliente una vez. Luego se selecciona y el sistema toma automáticamente el mail guardado.</div>
+
+<div class="card">
+<h3>Recuperar cliente guardado</h3>
+<div class="intro">Si el cliente ya fue cargado, selecciónelo desde la base para autocompletar CUIT, razón social, mail, contacto, teléfono y recuperar los últimos controles del checklist.</div>
+<div class="grid">
+<div class="field"><label>Buscar por CUIT o razón social</label><input id="employer_search_text" placeholder="Ej.: CUIT o nombre del cliente"></div>
+<div class="field"><label>Cliente guardado</label><select id="employer_saved_select"><option value="">Cargando clientes...</option></select></div>
+<div class="field"><button type="button" class="btn ghost" id="refreshEmployersBtn">Actualizar lista</button></div>
+<div class="field"><button type="button" class="btn" id="loadEmployerBtn">Cargar cliente seleccionado</button></div>
+</div>
+<div id="loadEmployerResult" class="notice hidden"></div>
+</div>
+
 <div class="grid">
 <div class="field"><label>CUIT empleador <span class="req">*</span></label><input id="employer_cuit" maxlength="11" inputmode="numeric"><div class="error">CUIT inválido.</div></div>
 <div class="field"><label>Razón social <span class="req">*</span></label><input id="employer_name"></div>
@@ -151,7 +164,7 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
 </section>
 <section class="section" data-step="2"><h2>Beneficio aplicable</h2>
 <div class="help-inline"><button type="button" class="help-btn" onclick="toggleHelp('help_beneficio')">Ayuda</button><div class="help-panel" id="help_beneficio">Administre el catálogo de beneficios. La vigencia y estado normativo condicionan si se puede generar una solicitud limpia o si requiere revisión.</div></div>
-<div class="intro">El beneficio lo define el Estudio. Use Agregar/Modificar/Inactivar para administrar el catálogo sin tocar código.</div>
+<div class="intro" id="benefitCatalogNotice"><strong>Uso operativo:</strong> para una nueva solicitud solo seleccione un beneficio del catálogo. Vigencia, fin de vigencia, requisitos, documentación y advertencias se autocompletan desde la base. No deben recargarse por cada alta.</div>
 <div class="grid">
 <div class="field"><label>Beneficio</label><select id="benefit_id"></select></div>
 <div class="field"><label>Estado normativo</label><select id="benefit_status"><option>operativo</option><option>pendiente de reglamentación</option><option>no operativo</option><option>suspendido</option><option>inactivo</option></select></div>
@@ -171,12 +184,14 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
 </div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
 <button type="button" class="btn ghost" id="newBenefitBtn">Agregar beneficio</button>
+<button type="button" class="btn ghost" id="editBenefitBtn">Editar datos del beneficio</button>
 <button type="button" class="btn" id="saveBenefitBtn">Guardar / modificar beneficio</button>
 <button type="button" class="btn danger" id="inactiveBenefitBtn">Inactivar beneficio</button>
 </div>
 <div id="benefitResult" class="notice hidden"></div>
 </section>
 <section class="section" data-step="3"><h2>Crear solicitud y enviar link</h2>
+<div class="notice ok" id="benefitRequestNotice"><strong>Beneficio:</strong> la solicitud toma el beneficio seleccionado desde el catálogo. No vuelva a cargar vigencia, fin de vigencia ni requisitos en cada formulario.</div>
 <div class="help-inline"><button type="button" class="help-btn" onclick="toggleHelp('help_crear')">Ayuda</button><div class="help-panel" id="help_crear">Genere token/link y envíelo al empleador. El empleador reenvía el link al postulante.</div></div>
 <div class="grid">
 <div class="field"><label>Fecha probable de ingreso</label><input id="entry_date" type="date"></div>
@@ -267,7 +282,7 @@ Estudio</textarea></div>
 </section>
 </main></div></div></div>
 <script>
-const APP_VERSION = "v17.1.1";
+const APP_VERSION = "v17.1.3";
 const APP_BUILD_DATE = "2026-05-27";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt3ezc7-m7lXcQTwfUfAaAkU-tkipho7JYko4bdsoRmruzON43Y8Rp2_klo8LTzX6O/exec";
 const FORM_URL = "https://clgest.github.io/auditoria-system/";
@@ -282,8 +297,10 @@ const EMPLOYER_CONTROLS = [
   {id:"autorizacion_delegacion", label:"Autorización / delegación del cliente", source:"Cliente / ARCA", url:"https://auth.afip.gob.ar/contribuyente_/login.xhtml", evidence:"Mail de autorización, respuesta, captura o constancia"}
 ];
 let EMPLOYER_CONTROL_FILES = {};
+let EMPLOYERS_CACHE = [];
+let EMPLOYER_SAVED_CONTROLS = {};
 
-const BENEFITS=[
+let BENEFITS=[
 {id:"none",name:"Ninguno",status:"operativo",inicio_vigencia:"",fin_vigencia:"",dias_alerta_previa:"",description:"Alta sin beneficio especial.",docs:"Documentación estándar.",risk:"Sin reducción especial."},
 {id:"rifl_desocupacion",name:"RIFL - Ley 27.802 - desocupación mínima seis meses",status:"operativo",inicio_vigencia:"",fin_vigencia:"",dias_alerta_previa:"30",description:"Requiere acreditar condición de desocupación mínima de seis meses previos al alta laboral, según encuadre definido por el Estudio.",docs:"Certificación Negativa ANSES; Historia Laboral ANSES; DDJJ específica.",risk:"Si no se acredita el requisito puede decaer el beneficio y corresponder ingreso de contribuciones, intereses y sanciones."},
 {id:"beneficio_pendiente",name:"Otro beneficio pendiente de reglamentación",status:"pendiente de reglamentación",inicio_vigencia:"",fin_vigencia:"",dias_alerta_previa:"",description:"Beneficio cargado para análisis. No debe aplicarse automáticamente hasta habilitación expresa del Estudio.",docs:"A definir por normativa/reglamentación.",risk:"No operativo. Requiere validación normativa antes de aplicar."}
@@ -312,6 +329,80 @@ function renderSection(){
   renderNav();
 }
 
+
+function normalizeBenefitRow(b){
+  const id = b.id || b.id_beneficio || "";
+  return {
+    ...b,
+    id: id,
+    id_beneficio: id,
+    name: b.name || b.nombre || id,
+    nombre: b.nombre || b.name || id,
+    status: b.status || b.estado || "",
+    estado: b.estado || b.status || "",
+    description: b.description || b.descripcion || b.requisitos || "",
+    descripcion: b.descripcion || b.description || "",
+    docs: b.docs || b.documentacion || "",
+    documentacion: b.documentacion || b.docs || "",
+    risk: b.risk || b.riesgo || "",
+    riesgo: b.riesgo || b.risk || "",
+    inicio_vigencia: b.inicio_vigencia || "",
+    fin_vigencia: b.fin_vigencia || "",
+    dias_alerta_previa: b.dias_alerta_previa || "30",
+    permite_solicitud: b.permite_solicitud || "SI",
+    requiere_revision: b.requiere_revision || "NO",
+    activo: b.activo || "SI"
+  };
+}
+
+function renderBenefitOptions(){
+  const benefitSelect = qs("#benefit_id");
+  if(!benefitSelect) return;
+  const current = benefitSelect.value;
+  benefitSelect.innerHTML = BENEFITS.map(b=>`<option value="${esc(b.id||b.id_beneficio)}">${esc(b.name||b.nombre)}</option>`).join("");
+  if(current && Array.from(benefitSelect.options).some(o=>o.value===current)) benefitSelect.value=current;
+}
+
+async function loadBenefitsCatalog(){
+  try{
+    if(APPS_SCRIPT_URL.includes("PEGAR_AQUI")) return;
+    const r = await fetch(APPS_SCRIPT_URL + "?action=listBenefits");
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error || "No se pudo cargar catálogo de beneficios.");
+    const rows = Array.isArray(j.benefits) ? j.benefits.filter(b => String(b.activo || "SI").toUpperCase() !== "NO") : [];
+    if(rows.length){
+      BENEFITS = rows.map(normalizeBenefitRow);
+    }else{
+      BENEFITS = BENEFITS.map(normalizeBenefitRow);
+    }
+    renderBenefitOptions();
+  }catch(e){
+    console.warn("No se pudo cargar catálogo de beneficios. Se usa catálogo local.", e);
+    BENEFITS = BENEFITS.map(normalizeBenefitRow);
+    renderBenefitOptions();
+  }
+}
+
+function toggleBenefitEdit(enable){
+  const ids = [
+    "benefit_status","benefit_start","benefit_end","benefit_alert_days","benefit_norma","benefit_active",
+    "benefit_description","benefit_requisitos","benefit_docs","benefit_ddjj","benefit_risk",
+    "benefit_permite","benefit_revision"
+  ];
+  ids.forEach(id=>{
+    const el=qs("#"+id);
+    if(!el) return;
+    if(el.tagName==="SELECT") el.disabled = !enable;
+    else el.readOnly = !enable;
+  });
+  const box=qs("#benefitResult");
+  if(box && !enable){
+    box.className="notice ok";
+    box.textContent="Beneficio en modo consulta. Para una nueva solicitud solo seleccione el beneficio; los datos se toman del catálogo.";
+    box.classList.remove("hidden");
+  }
+}
+
 function renderBenefit(){
   const benefitSelect = qs("#benefit_id");
   const id = benefitSelect ? benefitSelect.value : "";
@@ -334,20 +425,24 @@ function renderBenefit(){
   set("benefit_permite", b.permite_solicitud || "SI");
   set("benefit_revision", b.requiere_revision || "NO");
   updateBenefitAlert();
+  toggleBenefitEdit(false);
 }
 
-function init(){
+async function init(){
+  try{ await loadBenefitsCatalog(); }catch(e){ console.error("Error cargando catálogo de beneficios", e); }
   try{
     const benefitSelect = qs("#benefit_id");
     if(benefitSelect){
-      benefitSelect.innerHTML = BENEFITS.map(b=>`<option value="${b.id||b.id_beneficio}">${b.name||b.nombre}</option>`).join("");
+      renderBenefitOptions();
       benefitSelect.onchange = renderBenefit;
     }
     renderBenefit();
+    toggleBenefitEdit(false);
   }catch(e){ console.error("Error inicializando beneficios", e); }
   try{ renderNav(); }catch(e){ console.error("Error renderNav", e); }
   try{ bind(); }catch(e){ console.error("Error bind", e); }
   try{ renderEmployerChecklist(); }catch(e){ console.error("Error checklist", e); }
+  try{ loadEmployers(); }catch(e){ console.error("Error cargando clientes", e); }
   try{ loadBenefitDashboard(); }catch(e){ console.error("Error benefit dashboard", e); }
   try{ loadDashboard(); }catch(e){ console.error("Error dashboard", e); }
 }
@@ -393,22 +488,22 @@ function getSelectedBenefitPayload(){
     nombre: optText,
     status: get("benefit_status") || base.status || base.estado || "",
     estado: get("benefit_status") || base.estado || base.status || "",
-    inicio_vigencia: get("benefit_start"),
-    fin_vigencia: get("benefit_end"),
-    dias_alerta_previa: get("benefit_alert_days") || "30",
+    inicio_vigencia: get("benefit_start") || base.inicio_vigencia || "",
+    fin_vigencia: get("benefit_end") || base.fin_vigencia || "",
+    dias_alerta_previa: get("benefit_alert_days") || base.dias_alerta_previa || "30",
     alerta_vigencia: get("benefit_alert"),
-    norma: get("benefit_norma"),
-    activo: get("benefit_active") || "SI",
-    description: get("benefit_description") || get("benefit_requisitos"),
-    descripcion: get("benefit_description"),
-    requisitos: get("benefit_requisitos"),
-    docs: get("benefit_docs"),
-    documentacion: get("benefit_docs"),
-    ddjj: get("benefit_ddjj"),
-    risk: get("benefit_risk"),
-    riesgo: get("benefit_risk"),
-    permite_solicitud: get("benefit_permite") || "SI",
-    requiere_revision: get("benefit_revision") || "NO"
+    norma: get("benefit_norma") || base.norma || "",
+    activo: get("benefit_active") || base.activo || "SI",
+    description: get("benefit_description") || base.description || base.descripcion || get("benefit_requisitos"),
+    descripcion: get("benefit_description") || base.descripcion || "",
+    requisitos: get("benefit_requisitos") || base.requisitos || "",
+    docs: get("benefit_docs") || base.docs || base.documentacion || "",
+    documentacion: get("benefit_docs") || base.documentacion || "",
+    ddjj: get("benefit_ddjj") || base.ddjj || "",
+    risk: get("benefit_risk") || base.risk || base.riesgo || "",
+    riesgo: get("benefit_risk") || base.riesgo || "",
+    permite_solicitud: get("benefit_permite") || base.permite_solicitud || "SI",
+    requiere_revision: get("benefit_revision") || base.requiere_revision || "NO"
   };
 }
 
@@ -425,6 +520,9 @@ function bind(){
   on("benefit_start", updateBenefitAlert, "onchange");
   on("benefit_end", updateBenefitAlert, "onchange");
   on("benefit_alert_days", updateBenefitAlert, "oninput");
+  on("refreshEmployersBtn", loadEmployers);
+  on("loadEmployerBtn", loadSelectedEmployer);
+  on("employer_search_text", filterEmployersSelect, "oninput");
   on("saveEmployerBtn", saveEmployer);
   on("renderEmployerChecklistBtn", renderEmployerChecklist);
   on("saveEmployerChecklistBtn", saveEmployerChecklist);
@@ -434,6 +532,7 @@ function bind(){
   on("sendReminderBtn", sendCommunication);
   on("saveManualCommBtn", saveManualCommunication);
   on("newBenefitBtn", newBenefit);
+  on("editBenefitBtn", ()=>toggleBenefitEdit(true));
   on("saveBenefitBtn", saveBenefit);
   on("inactiveBenefitBtn", inactiveBenefit);
   on("uploadAltaBtn", uploadAltaTemprana);
@@ -665,20 +764,32 @@ function currentEmployerCuit(){
   return digits(qs("#employer_cuit")?.value || "");
 }
 
-function renderEmployerChecklist(){
+function renderEmployerChecklist(savedControls){
   const body = qs("#employerChecklistBody");
   if(!body) return;
+  if(savedControls){
+    EMPLOYER_SAVED_CONTROLS = {};
+    savedControls.forEach(x => {
+      EMPLOYER_SAVED_CONTROLS[x.label] = x;
+    });
+  }
   const rows = Array.isArray(EMPLOYER_CONTROLS) ? EMPLOYER_CONTROLS : [];
-  body.innerHTML = rows.map(c => `
+  body.innerHTML = rows.map(c => {
+    const saved = EMPLOYER_SAVED_CONTROLS[c.label] || EMPLOYER_SAVED_CONTROLS[c.id] || {};
+    const status = saved.resultado || "";
+    const obs = saved.observacion || "";
+    const doc = saved.documento_respaldo || "";
+    const fileName = saved.nombre_archivo_normalizado || "";
+    return `
     <tr>
       <td><strong>${esc(c.label)}</strong><div class="help">${esc(c.evidence || "")}</div></td>
       <td>
         <select data-control-status="${c.id}">
-          <option value="">Pendiente</option>
-          <option>OK</option>
-          <option>Observado</option>
-          <option>Bloqueado</option>
-          <option>No corresponde</option>
+          <option value="" ${status===""?"selected":""}>Pendiente</option>
+          <option ${status==="OK"?"selected":""}>OK</option>
+          <option ${status==="Observado"?"selected":""}>Observado</option>
+          <option ${status==="Bloqueado"?"selected":""}>Bloqueado</option>
+          <option ${status==="No corresponde"?"selected":""}>No corresponde</option>
         </select>
       </td>
       <td>
@@ -690,11 +801,12 @@ function renderEmployerChecklist(){
       </td>
       <td>
         <input type="file" data-control-file="${c.id}" accept=".pdf,image/*,.png,.jpg,.jpeg">
-        <div class="help" id="fileLabel_${c.id}">Sin archivo</div>
+        <div class="help" id="fileLabel_${c.id}">${fileName ? esc(fileName) : "Sin archivo nuevo"}</div>
+        ${doc ? `<div><a target="_blank" href="${esc(doc)}">Ver evidencia guardada</a></div>` : ""}
       </td>
-      <td><textarea data-control-observation="${c.id}" placeholder="Observación del operador"></textarea></td>
-    </tr>
-  `).join("");
+      <td><textarea data-control-observation="${c.id}" placeholder="Observación del operador">${esc(obs)}</textarea></td>
+    </tr>`;
+  }).join("");
   if(!rows.length){
     body.innerHTML = "<tr><td colspan='5'>Checklist no disponible. Revise la versión del panel.</td></tr>";
   }
@@ -728,6 +840,87 @@ function fileToBase64Employer(file){
     reader.onerror = rej;
     reader.readAsDataURL(file);
   });
+}
+
+
+async function loadEmployers(){
+  const sel = qs("#employer_saved_select");
+  const box = qs("#loadEmployerResult");
+  if(sel) sel.innerHTML = `<option value="">Cargando clientes...</option>`;
+  try{
+    if(APPS_SCRIPT_URL.includes("PEGAR_AQUI")) throw new Error("Falta configurar APPS_SCRIPT_URL.");
+    const r = await fetch(APPS_SCRIPT_URL + "?action=listEmployers");
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error || "No se pudo cargar clientes.");
+    EMPLOYERS_CACHE = j.employers || [];
+    renderEmployersSelect(EMPLOYERS_CACHE);
+    if(box){
+      box.className = "notice ok";
+      box.textContent = "Clientes cargados: " + EMPLOYERS_CACHE.length;
+      box.classList.remove("hidden");
+    }
+  }catch(e){
+    if(sel) sel.innerHTML = `<option value="">No se pudo cargar clientes</option>`;
+    if(box){
+      box.className = "notice bad";
+      box.textContent = e.message;
+      box.classList.remove("hidden");
+    }
+  }
+}
+
+function renderEmployersSelect(rows){
+  const sel = qs("#employer_saved_select");
+  if(!sel) return;
+  rows = Array.isArray(rows) ? rows : [];
+  sel.innerHTML = `<option value="">Seleccione cliente guardado...</option>` + rows.map(e =>
+    `<option value="${esc(e.cuit)}">${esc(e.cuit)} - ${esc(e.razon_social)}${e.email ? " | " + esc(e.email) : ""}</option>`
+  ).join("");
+}
+
+function filterEmployersSelect(){
+  const q = String(qs("#employer_search_text")?.value || "").toLowerCase().trim();
+  if(!q){ renderEmployersSelect(EMPLOYERS_CACHE); return; }
+  const rows = EMPLOYERS_CACHE.filter(e =>
+    String(e.cuit || "").includes(q) ||
+    String(e.razon_social || "").toLowerCase().includes(q) ||
+    String(e.email || "").toLowerCase().includes(q)
+  );
+  renderEmployersSelect(rows);
+}
+
+async function loadSelectedEmployer(){
+  const sel = qs("#employer_saved_select");
+  const box = qs("#loadEmployerResult");
+  const cuit = sel ? sel.value : "";
+  if(!cuit){
+    if(box){ box.className="notice bad"; box.textContent="Seleccione un cliente guardado."; box.classList.remove("hidden"); }
+    return;
+  }
+  try{
+    if(box){ box.className="notice warn"; box.textContent="Recuperando cliente..."; box.classList.remove("hidden"); }
+    const r = await fetch(APPS_SCRIPT_URL + "?action=getEmployerByCuit&cuit=" + encodeURIComponent(cuit));
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error || "No se pudo recuperar cliente.");
+    applyEmployerToPanel(j.employer, j.controls || []);
+    if(box){
+      box.className="notice ok";
+      box.textContent="Cliente recuperado. Se autocompletaron datos y últimos controles.";
+    }
+  }catch(e){
+    if(box){ box.className="notice bad"; box.textContent=e.message; box.classList.remove("hidden"); }
+  }
+}
+
+function applyEmployerToPanel(e, controls){
+  if(!e) return;
+  qs("#employer_cuit").value = digits(e.cuit || "");
+  qs("#employer_name").value = e.razon_social || "";
+  qs("#employer_email").value = e.email || "";
+  qs("#employer_contact").value = e.contacto || "";
+  qs("#employer_phone").value = e.telefono || "";
+  EMPLOYER_CONTROL_FILES = {};
+  renderEmployerChecklist(controls || []);
 }
 
 async function saveEmployerChecklist(){
@@ -794,7 +987,7 @@ async function saveEmployer(){
   if(!cuitOk(qs("#employer_cuit").value)){ box.className="notice bad"; box.textContent="CUIT empleador inválido."; return; }
   try{
     await post("saveEmployer", { employer_cuit: digits(qs("#employer_cuit").value), employer_name: qs("#employer_name").value.trim(), employer_email: qs("#employer_email").value.trim(), employer_contact: qs("#employer_contact").value.trim(), employer_phone: qs("#employer_phone").value.trim() });
-    box.className="notice ok"; box.textContent="Cliente guardado correctamente.";
+    box.className="notice ok"; box.textContent="Cliente guardado correctamente."; await loadEmployers();
   }catch(e){ box.className="notice bad"; box.textContent=e.message; }
 }
 function openLink(url){ if(!url){ alert("No hay link disponible."); return; } window.open(url,"_blank"); }
@@ -892,22 +1085,23 @@ async function cancelReq(id){
 async function sendReminder(){const box=qs("#remResult");box.className="notice warn";box.textContent="Enviando...";box.classList.remove("hidden");try{await post("sendReminder",{request_id:qs("#rem_request_id").value,to:qs("#rem_to").value,reason:qs("#rem_reason").value,note:qs("#rem_note").value});box.className="notice ok";box.textContent="Recordatorio registrado/enviado."}catch(e){box.className="notice bad";box.textContent=e.message}}
 
 function getSelectedBenefitForm(){
+  const p = getSelectedBenefitPayload();
   return {
-    id_beneficio: qs("#benefit_id").value || "",
-    nombre: qs("#benefit_id").selectedOptions?.[0]?.textContent || qs("#benefit_id").value || "",
-    norma: qs("#benefit_norma")?.value || "",
-    estado: qs("#benefit_status")?.value || "",
-    inicio_vigencia: qs("#benefit_start")?.value || "",
-    fin_vigencia: qs("#benefit_end")?.value || "",
-    dias_alerta_previa: qs("#benefit_alert_days")?.value || "30",
-    descripcion: qs("#benefit_description")?.value || "",
-    requisitos: qs("#benefit_requisitos")?.value || "",
-    documentacion: qs("#benefit_docs")?.value || "",
-    ddjj: qs("#benefit_ddjj")?.value || "",
-    riesgo: qs("#benefit_risk")?.value || "",
-    permite_solicitud: qs("#benefit_permite")?.value || "SI",
-    requiere_revision: qs("#benefit_revision")?.value || "NO",
-    activo: qs("#benefit_active")?.value || "SI"
+    id_beneficio: p.id_beneficio || p.id || "",
+    nombre: p.nombre || p.name || "",
+    norma: p.norma || "",
+    estado: p.estado || p.status || "",
+    inicio_vigencia: p.inicio_vigencia || "",
+    fin_vigencia: p.fin_vigencia || "",
+    dias_alerta_previa: p.dias_alerta_previa || "30",
+    descripcion: p.descripcion || p.description || "",
+    requisitos: p.requisitos || "",
+    documentacion: p.documentacion || p.docs || "",
+    ddjj: p.ddjj || "",
+    riesgo: p.riesgo || p.risk || "",
+    permite_solicitud: p.permite_solicitud || "SI",
+    requiere_revision: p.requiere_revision || "NO",
+    activo: p.activo || "SI"
   };
 }
 
@@ -927,12 +1121,21 @@ function newBenefit(){
   qs("#benefit_permite").value = "SI";
   qs("#benefit_revision").value = "NO";
   updateBenefitAlert();
+  toggleBenefitEdit(true);
 }
 
 async function saveBenefit(){
   const box = qs("#benefitResult");
   box.className = "notice warn"; box.textContent = "Guardando beneficio..."; box.classList.remove("hidden");
-  try{ await post("saveBenefit", getSelectedBenefitForm()); box.className = "notice ok"; box.textContent = "Beneficio guardado correctamente."; await loadBenefitDashboard(); }
+  try{
+    await post("saveBenefit", getSelectedBenefitForm());
+    box.className = "notice ok";
+    box.textContent = "Beneficio guardado correctamente. Queda disponible para nuevas solicitudes sin volver a cargar vigencia ni requisitos.";
+    await loadBenefitsCatalog();
+    await loadBenefitDashboard();
+    renderBenefit();
+    toggleBenefitEdit(false);
+  }
   catch(e){ box.className = "notice bad"; box.textContent = e.message; }
 }
 
@@ -942,7 +1145,7 @@ async function inactiveBenefit(){
   if(!confirm("Inactivar beneficio seleccionado?")) return;
   const box = qs("#benefitResult");
   box.className = "notice warn"; box.textContent = "Inactivando beneficio..."; box.classList.remove("hidden");
-  try{ await post("inactivateBenefit", { id_beneficio:id, note:"Inactivado desde panel" }); qs("#benefit_active").value = "NO"; qs("#benefit_status").value = "inactivo"; box.className = "notice ok"; box.textContent = "Beneficio inactivado."; await loadBenefitDashboard(); }
+  try{ await post("inactivateBenefit", { id_beneficio:id, note:"Inactivado desde panel" }); qs("#benefit_active").value = "NO"; qs("#benefit_status").value = "inactivo"; box.className = "notice ok"; box.textContent = "Beneficio inactivado."; await loadBenefitsCatalog(); await loadBenefitDashboard(); renderBenefit(); }
   catch(e){ box.className = "notice bad"; box.textContent = e.message; }
 }
 
@@ -1055,7 +1258,7 @@ function initViewMode(){
   if(m) m.onclick = () => setViewMode("mobile");
 }
 
-console.log("e-Up RRHH panel v17.1.1 - 2026-05-27");
+console.log("e-Up RRHH panel v17.1.3 - 2026-05-27");
 initViewMode();
 init();
 </script>
