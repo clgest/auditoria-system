@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- e-Up RRHH Panel del Estudio | VERSION v17.1.3 | 2026-05-27 -->
+<!-- e-Up RRHH Panel del Estudio | VERSION v17.1.4 | 2026-05-27 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -88,7 +88,7 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
     <button type="button" id="viewModeDesktop">Vista escritorio</button>
     <button type="button" id="viewModeMobile">Vista celular</button>
   </div>
-  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v17.1.3</span>
+  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v17.1.4</span>
 </div></div></div>
 <div class="wrap"><div class="paper">
 <div class="doc-head"><div class="doc-title">Panel del Estudio</div><p class="hint center">Crear solicitud, seleccionar beneficio, generar token, enviar mail al empleador, controlar estado y cerrar trámite.</p></div>
@@ -115,17 +115,17 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
 <div class="help-inline"><button type="button" class="help-btn" onclick="toggleHelp('help_cliente')">Ayuda</button><div class="help-panel" id="help_cliente">Cargue el cliente y use el checklist para verificar ARCA, ART, REPSAL certificado y autorizaciones. Descargue constancias y súbalas como evidencia.</div></div>
 <div class="intro">Cargue el cliente una vez. Luego se selecciona y el sistema toma automáticamente el mail guardado.</div>
 
+
 <div class="card">
-<h3>Recuperar cliente guardado</h3>
-<div class="intro">Si el cliente ya fue cargado, selecciónelo desde la base para autocompletar CUIT, razón social, mail, contacto, teléfono y recuperar los últimos controles del checklist.</div>
+<h3>Buscar cliente existente</h3>
+<div class="intro">Busque por CUIT, razón social, apellido/nombre o email. Al seleccionar el cliente, el sistema autocompleta los datos y recupera los últimos controles guardados. No vuelva a cargar el cliente si ya existe.</div>
 <div class="grid">
-<div class="field"><label>Buscar por CUIT o razón social</label><input id="employer_search_text" placeholder="Ej.: CUIT o nombre del cliente"></div>
-<div class="field"><label>Cliente guardado</label><select id="employer_saved_select"><option value="">Cargando clientes...</option></select></div>
-<div class="field"><button type="button" class="btn ghost" id="refreshEmployersBtn">Actualizar lista</button></div>
-<div class="field"><button type="button" class="btn" id="loadEmployerBtn">Cargar cliente seleccionado</button></div>
+<div class="field"><label>Buscar cliente</label><input id="employer_search_text" placeholder="Escriba CUIT, razón social, apellido o email"></div>
+<div class="field"><label>Resultado</label><select id="employer_saved_select"><option value="">Cargando clientes...</option></select><div class="help">Seleccione un resultado para usarlo en esta nueva solicitud.</div></div>
 </div>
 <div id="loadEmployerResult" class="notice hidden"></div>
 </div>
+
 
 <div class="grid">
 <div class="field"><label>CUIT empleador <span class="req">*</span></label><input id="employer_cuit" maxlength="11" inputmode="numeric"><div class="error">CUIT inválido.</div></div>
@@ -282,7 +282,7 @@ Estudio</textarea></div>
 </section>
 </main></div></div></div>
 <script>
-const APP_VERSION = "v17.1.3";
+const APP_VERSION = "v17.1.4";
 const APP_BUILD_DATE = "2026-05-27";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt3ezc7-m7lXcQTwfUfAaAkU-tkipho7JYko4bdsoRmruzON43Y8Rp2_klo8LTzX6O/exec";
 const FORM_URL = "https://clgest.github.io/auditoria-system/";
@@ -520,9 +520,8 @@ function bind(){
   on("benefit_start", updateBenefitAlert, "onchange");
   on("benefit_end", updateBenefitAlert, "onchange");
   on("benefit_alert_days", updateBenefitAlert, "oninput");
-  on("refreshEmployersBtn", loadEmployers);
-  on("loadEmployerBtn", loadSelectedEmployer);
   on("employer_search_text", filterEmployersSelect, "oninput");
+  on("employer_saved_select", loadSelectedEmployer, "onchange");
   on("saveEmployerBtn", saveEmployer);
   on("renderEmployerChecklistBtn", renderEmployerChecklist);
   on("saveEmployerChecklistBtn", saveEmployerChecklist);
@@ -856,7 +855,7 @@ async function loadEmployers(){
     renderEmployersSelect(EMPLOYERS_CACHE);
     if(box){
       box.className = "notice ok";
-      box.textContent = "Clientes cargados: " + EMPLOYERS_CACHE.length;
+      box.textContent = "Base de clientes disponible: " + EMPLOYERS_CACHE.length + " registros. Busque y seleccione uno.";
       box.classList.remove("hidden");
     }
   }catch(e){
@@ -873,39 +872,42 @@ function renderEmployersSelect(rows){
   const sel = qs("#employer_saved_select");
   if(!sel) return;
   rows = Array.isArray(rows) ? rows : [];
-  sel.innerHTML = `<option value="">Seleccione cliente guardado...</option>` + rows.map(e =>
-    `<option value="${esc(e.cuit)}">${esc(e.cuit)} - ${esc(e.razon_social)}${e.email ? " | " + esc(e.email) : ""}</option>`
-  ).join("");
+  sel.innerHTML = `<option value="">Seleccione cliente existente...</option>` + rows.map(e => {
+    const source = e.source ? ` [${e.source}]` : "";
+    return `<option value="${esc(e.cuit)}">${esc(e.razon_social || "Sin razón social")} — CUIT ${esc(e.cuit)}${e.email ? " — " + esc(e.email) : ""}${source}</option>`;
+  }).join("");
 }
 
 function filterEmployersSelect(){
   const q = String(qs("#employer_search_text")?.value || "").toLowerCase().trim();
-  if(!q){ renderEmployersSelect(EMPLOYERS_CACHE); return; }
-  const rows = EMPLOYERS_CACHE.filter(e =>
+  const box = qs("#loadEmployerResult");
+  const rows = !q ? EMPLOYERS_CACHE : EMPLOYERS_CACHE.filter(e =>
     String(e.cuit || "").includes(q) ||
     String(e.razon_social || "").toLowerCase().includes(q) ||
     String(e.email || "").toLowerCase().includes(q)
   );
   renderEmployersSelect(rows);
+  if(box){
+    box.className = "notice ok";
+    box.textContent = rows.length ? `Resultados encontrados: ${rows.length}. Seleccione uno para cargarlo.` : "Sin resultados. Si es un cliente nuevo, cargue sus datos abajo y presione Guardar cliente.";
+    box.classList.remove("hidden");
+  }
 }
 
 async function loadSelectedEmployer(){
   const sel = qs("#employer_saved_select");
   const box = qs("#loadEmployerResult");
   const cuit = sel ? sel.value : "";
-  if(!cuit){
-    if(box){ box.className="notice bad"; box.textContent="Seleccione un cliente guardado."; box.classList.remove("hidden"); }
-    return;
-  }
+  if(!cuit) return;
   try{
-    if(box){ box.className="notice warn"; box.textContent="Recuperando cliente..."; box.classList.remove("hidden"); }
+    if(box){ box.className="notice warn"; box.textContent="Cargando cliente seleccionado..."; box.classList.remove("hidden"); }
     const r = await fetch(APPS_SCRIPT_URL + "?action=getEmployerByCuit&cuit=" + encodeURIComponent(cuit));
     const j = await r.json();
     if(!j.ok) throw new Error(j.error || "No se pudo recuperar cliente.");
     applyEmployerToPanel(j.employer, j.controls || []);
     if(box){
       box.className="notice ok";
-      box.textContent="Cliente recuperado. Se autocompletaron datos y últimos controles.";
+      box.textContent="Cliente cargado desde " + (j.source || "base") + ". Datos y controles autocompletados.";
     }
   }catch(e){
     if(box){ box.className="notice bad"; box.textContent=e.message; box.classList.remove("hidden"); }
@@ -987,7 +989,7 @@ async function saveEmployer(){
   if(!cuitOk(qs("#employer_cuit").value)){ box.className="notice bad"; box.textContent="CUIT empleador inválido."; return; }
   try{
     await post("saveEmployer", { employer_cuit: digits(qs("#employer_cuit").value), employer_name: qs("#employer_name").value.trim(), employer_email: qs("#employer_email").value.trim(), employer_contact: qs("#employer_contact").value.trim(), employer_phone: qs("#employer_phone").value.trim() });
-    box.className="notice ok"; box.textContent="Cliente guardado correctamente."; await loadEmployers();
+    box.className="notice ok"; box.textContent="Cliente guardado correctamente y disponible en la búsqueda."; await loadEmployers();
   }catch(e){ box.className="notice bad"; box.textContent=e.message; }
 }
 function openLink(url){ if(!url){ alert("No hay link disponible."); return; } window.open(url,"_blank"); }
@@ -1258,7 +1260,7 @@ function initViewMode(){
   if(m) m.onclick = () => setViewMode("mobile");
 }
 
-console.log("e-Up RRHH panel v17.1.3 - 2026-05-27");
+console.log("e-Up RRHH panel v17.1.4 - 2026-05-27");
 initViewMode();
 init();
 </script>
