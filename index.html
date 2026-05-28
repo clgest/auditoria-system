@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- e-Up RRHH Formulario Postulante | VERSION v17.0.0 | 2026-05-27 -->
+<!-- e-Up RRHH Formulario Postulante | VERSION v17.1.1 | 2026-05-27 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -80,7 +80,7 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
     <button type="button" id="viewModeDesktop">Vista escritorio</button>
     <button type="button" id="viewModeMobile">Vista celular</button>
   </div>
-  Los campos con <span class="req">*</span> son obligatorios <span class="version-badge">Formulario v17.0.0</span>
+  Los campos con <span class="req">*</span> son obligatorios <span class="version-badge">Formulario v17.1.1</span>
 </div></div></div>
 <div class="wrap">
 <form id="form" class="paper" novalidate>
@@ -200,6 +200,11 @@ Esta solicitud fue generada por el Estudio y remitida al empleador. Usted solo d
 <section class="section" data-step="8">
 <h2>Vista previa y envío</h2>
 <div id="preview"></div><div id="finalError" class="notice bad hidden"></div><div id="sending" class="notice warn hidden">Enviando solicitud...</div><div id="finalBox" class="notice ok hidden"></div>
+
+<div class="notice warn" id="finalSignatureInstruction">
+<strong>Instrucción importante:</strong> una vez enviada la solicitud, descargue o imprima el PDF generado, fírmelo en forma ológrafa y preséntelo al empleador. El empleador debe conservar una copia firmada en el legajo laboral y remitir o subir copia digitalizada al sistema. Si quedó documentación pendiente, deberá completarla por internet dentro del plazo operativo de 7 días.
+</div>
+
 <button type="button" id="submitBtn" class="btn">Aceptar DDJJ y enviar solicitud</button> <button type="button" class="btn secondary" onclick="finishAndExit()">Finalizar y salir</button>
 </section>
 </main>
@@ -208,7 +213,7 @@ Esta solicitud fue generada por el Estudio y remitida al empleador. Usted solo d
 </form>
 </div>
 <script>
-const APP_VERSION = "v17.0.0";
+const APP_VERSION = "v17.1.1";
 const APP_BUILD_DATE = "2026-05-27";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt3ezc7-m7lXcQTwfUfAaAkU-tkipho7JYko4bdsoRmruzON43Y8Rp2_klo8LTzX6O/exec";
 const DECLARATION_VERSION = "DDJJ-RRHH-2026-04";
@@ -237,20 +242,39 @@ function setVal(n,v){const el=form.elements[n];if(el)el.value=v||""}
 function toggleHelp(id){ const el=document.getElementById(id); if(el) el.classList.toggle("open"); }
 function finishAndExit(){ document.body.innerHTML='<div class="wrap"><div class="paper"><div class="doc-head"><div class="doc-title">Trámite finalizado</div><p class="top-instruction center">La solicitud fue enviada o la sesión fue cerrada. Puede cerrar esta ventana.</p></div></div></div>'; }
 function init(){qs("#declarationBox").innerHTML="<pre style='white-space:pre-wrap;margin:0;font:inherit'>"+esc(DEFAULT_DECLARATION)+"</pre>";document.querySelector("[name=province]").innerHTML='<option value="">Seleccione</option>'+PROVINCES.map(p=>`<option ${p==="Tucumán"?"selected":""}>${p}</option>`).join("");loadTokenConfig();bind();renderNav();renderFamily();renderRefs();renderDocs();updateConditional()}
-async function loadTokenConfig(){const params=new URLSearchParams(location.search);const token=params.get("token")||"";setVal("request_token",token);if(!token){
-  setVal("employer_name","Solicitud sin token");
-  setVal("employer_cuit","");
-  setVal("request_number","Sin token");
-  setVal("benefit_name","Según solicitud");
-  setVal("benefit_requirement","Según solicitud");
-  qs("#benefitInfoName").textContent = "Según solicitud";
-  qs("#benefitInfoRequirement").textContent = "Según solicitud";
-  qs("#declarationBox").innerHTML="<pre style='white-space:pre-wrap;margin:0;font:inherit'>"+esc(DEFAULT_DECLARATION)+"</pre>";
-  renderDocs();
-  return;
+async function loadTokenConfig(){
+  const params=new URLSearchParams(location.search);
+  const token=params.get("token")||"";
+  setVal("request_token",token);
+  if(!token){
+    setVal("employer_name","Solicitud sin token");
+    setVal("employer_cuit","");
+    setVal("request_number","Sin token");
+    setVal("benefit_name","Según solicitud");
+    setVal("benefit_requirement","Según solicitud");
+    qs("#benefitInfoName").textContent = "Según solicitud";
+    qs("#benefitInfoRequirement").textContent = "Según solicitud";
+    qs("#declarationBox").innerHTML="<pre style='white-space:pre-wrap;margin:0;font:inherit'>"+esc(DEFAULT_DECLARATION)+"</pre>";
+    renderDocs();
+    return;
+  }
+  try{
+    if(!APPS_SCRIPT_URL.includes("PEGAR_AQUI")){
+      const r=await fetch(APPS_SCRIPT_URL+"?action=getRequestByToken&token="+encodeURIComponent(token));
+      const j=await r.json();
+      if(j.ok&&j.request){
+        applyConfig(j.request);
+        if(j.request.draft_payload && Object.keys(j.request.draft_payload).length){
+          applyDraftPayload(j.request.draft_payload);
+          const st=qs("#autosaveStatus");
+          if(st) st.textContent="Guardado parcial recuperado: "+(j.request.draft_updated_at||"última carga disponible");
+        }
+        return;
+      }
+    }
+  }catch(e){}
+  applyConfig({token,employer_name:params.get("ename")||"Empleador asignado",employer_cuit:params.get("ecuit")||"",benefit_name:params.get("benefit")||"Según solicitud",benefit_requirement:params.get("req")||"Según solicitud",photo_required:true});
 }
-try{if(!APPS_SCRIPT_URL.includes("PEGAR_AQUI")){const r=await fetch(APPS_SCRIPT_URL+"?action=getRequestByToken&token="+encodeURIComponent(token));const j=await r.json();if(j.ok&&j.request){applyConfig(j.request);return}}}catch(e){}
-applyConfig({token,employer_name:params.get("ename")||"Empleador asignado",employer_cuit:params.get("ecuit")||"",benefit_name:params.get("benefit")||"Según solicitud",benefit_requirement:params.get("req")||"Según solicitud",photo_required:true})}
 function applyConfig(c){
   requestConfig={...requestConfig,...c};
   setVal("employer_name",c.employer_name);
@@ -265,7 +289,7 @@ function applyConfig(c){
 }
 function renderNav(){qs("#nav").innerHTML=STEPS.map((s,i)=>`<button type="button" class="${i===current?'active':''}" data-jump="${i}">${i+1}. ${s}</button>`).join("");qsa("[data-jump]").forEach(b=>b.onclick=()=>{current=Number(b.dataset.jump);renderSection();})}
 function renderSection(){qsa(".section").forEach((s,i)=>s.classList.toggle("active",i===current));qs("#prevBtn").disabled=current===0;qs("#nextBtn").classList.toggle("hidden",current===8);if(current===6)renderDocs();if(current===8)renderPreview();renderNav();scrollTo(0,0)}
-function bind(){qsa("[data-radio]").forEach(g=>g.addEventListener("click",e=>{const l=e.target.closest(".choice");if(!l)return;const input=l.querySelector("input");input.checked=true;g.querySelectorAll(".choice").forEach(x=>x.classList.remove("selected"));l.classList.add("selected");updateConditional()}));form.addEventListener("input",updateConditional);qs("#prevBtn").onclick=()=>{if(current>0){current--;renderSection()}};qs("#nextBtn").onclick=()=>{if(validateCurrent()){current++;renderSection()}};qs("#resetBtn").onclick=()=>{if(confirm("¿Limpiar formulario?"))location.reload()};qs("#addFamily").onclick=()=>{family.push({relationship:"Hijo/a",name:"",birth_date:"",dni:"",studies:"No"});renderFamily();renderDocs()};qs("#addRef").onclick=()=>{refs.push({employer_cuit:"",employer_name:"",contact_name:"",contact_role:"",contact_email:"",contact_phone:"",period:"",position:"",authorized:"Sí"});renderRefs()};qs("#submitBtn").onclick=submit}
+function bind(){qsa("[data-radio]").forEach(g=>g.addEventListener("click",e=>{const l=e.target.closest(".choice");if(!l)return;const input=l.querySelector("input");input.checked=true;g.querySelectorAll(".choice").forEach(x=>x.classList.remove("selected"));l.classList.add("selected");updateConditional()}));form.addEventListener("input",updateConditional);form.addEventListener("input",scheduleDraftSave);form.addEventListener("change",scheduleDraftSave);qs("#prevBtn").onclick=()=>{if(current>0){current--;renderSection()}};qs("#nextBtn").onclick=()=>{if(validateCurrent()){current++;renderSection()}};qs("#resetBtn").onclick=()=>{if(confirm("¿Limpiar formulario?"))location.reload()};qs("#addFamily").onclick=()=>{family.push({relationship:"Hijo/a",name:"",birth_date:"",dni:"",studies:"No"});renderFamily();renderDocs()};qs("#addRef").onclick=()=>{refs.push({employer_cuit:"",employer_name:"",contact_name:"",contact_role:"",contact_email:"",contact_phone:"",period:"",position:"",authorized:"Sí"});renderRefs()};qs("#submitBtn").onclick=submit}
 function updateConditional(){const pension=val("pension_benefit")==="Sí";form.elements.benefit_number.disabled=!pension;if(!pension)form.elements.benefit_number.value="";const cons=val("construction_book")==="Sí";form.elements.construction_book_detail.disabled=!cons;if(!cons)form.elements.construction_book_detail.value="";const dis=val("disability")==="Sí";form.elements.disability_description.disabled=!dis;if(!dis)form.elements.disability_description.value="";renderDocs()}
 
 function validateNoRepeatedIdentifiers(){
@@ -309,9 +333,58 @@ function baseDocs(){let l=[{id:"photo",label:"Foto / imagen del postulante",requ
 function renderDocs(){const list=baseDocs();qs("#docChecklist").innerHTML=list.map(d=>{const loaded=docs[d.id]?.filename;return `<div class="doc-item"><div class="doc-line"><div><strong>${esc(d.label)}</strong> ${d.required?'<span class="tag required">obligatorio</span>':'<span class="tag optional">opcional</span>'} ${loaded?'<span class="tag loaded">cargado</span>':'<span class="tag warn">pendiente</span>'}<div class="help">${loaded?esc(docs[d.id].filename):'Debe subir archivo o tomar foto.'}</div>${d.help?`<div><a target="_blank" href="${HELP_LINKS[d.help]}">Cómo obtenerlo</a></div>`:''}</div><label class="btn ghost" style="margin:0;cursor:pointer">Subir / tomar foto<input type="file" accept=".pdf,image/*" capture="environment" data-docid="${d.id}" hidden></label></div></div>`}).join("");qsa("[data-docid]").forEach(inp=>inp.onchange=async e=>{const file=e.target.files[0];if(!file)return;const b64=await fileToBase64(file);docs[inp.dataset.docid]={type:(baseDocs().find(d=>d.id===inp.dataset.docid)||{}).label||inp.dataset.docid,filename:file.name,mimeType:file.type||"application/octet-stream",base64:b64.split(",")[1],required:(baseDocs().find(d=>d.id===inp.dataset.docid)||{}).required};renderDocs()})}
 function missingDocs(){return baseDocs().filter(d=>d.required&&!docs[d.id]?.filename)}
 function collect(){const fd=new FormData(form),data={};fd.forEach((v,k)=>data[k]=v);data.employer_cuit=digits(data.employer_cuit);data.cuil=digits(data.cuil);data.accepted_cuil=digits(data.accepted_cuil);data.last_employer_cuit=digits(data.last_employer_cuit);data.family=family;data.references=refs;data.documents=Object.values(docs);data.missing_documents=missingDocs().map(d=>d.label);data.status=data.missing_documents.length?"submitted_pending_documents":"submitted_complete";data.declaration_version=DECLARATION_VERSION;data.declaration_text=requestConfig.benefit_declaration||DEFAULT_DECLARATION;data.client_timestamp=new Date().toISOString();data.user_agent=navigator.userAgent;data.page_url=location.href;return data}
+
+function applyDraftPayload(d){
+  if(!d) return;
+  Object.keys(d).forEach(k=>{
+    if(["documents","family","references"].includes(k)) return;
+    const el=form.elements[k];
+    if(!el) return;
+    if(el.length && el[0] && el[0].type==="radio"){
+      Array.from(el).forEach(r=>{ r.checked = String(r.value)===String(d[k]); });
+      return;
+    }
+    if(el.type==="checkbox") el.checked=!!d[k];
+    else if(el.type!=="file") el.value=d[k]||"";
+  });
+  if(Array.isArray(d.family)){ family=d.family; renderFamily(); }
+  if(Array.isArray(d.references)){ refs=d.references; renderRefs(); }
+  updateConditional();
+}
+
+function collectDraftPayload(){
+  const data=collect();
+  data.current_step=current;
+  data.client_autosave_at=new Date().toISOString();
+  data.documents=(data.documents||[]).map(d=>({type:d.type,label:d.label,filename:d.filename,required:!!d.required,loaded:!!d.filename}));
+  return data;
+}
+
+let draftTimer=null;
+function scheduleDraftSave(){
+  clearTimeout(draftTimer);
+  draftTimer=setTimeout(saveDraftNow,900);
+}
+
+async function saveDraftNow(){
+  const st=qs("#autosaveStatus");
+  try{
+    if(APPS_SCRIPT_URL.includes("PEGAR_AQUI")) return;
+    const token=val("request_token");
+    if(!token) return;
+    const data=collectDraftPayload();
+    const r=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"saveApplicationDraft",payload:data})});
+    const j=await r.json();
+    if(!j.ok) throw new Error(j.error||"No se pudo guardar borrador");
+    if(st) st.textContent="Guardado parcial: "+(j.saved_at||"OK");
+  }catch(e){
+    if(st) st.textContent="Guardado parcial: error ("+e.message+")";
+  }
+}
+
 function renderPreview(){const d=collect(),miss=missingDocs();qs("#preview").innerHTML=`<div class="card"><h3>Empleador</h3><div class="kv"><strong>CUIT</strong><span>${esc(d.employer_cuit)}</span><strong>Nombre</strong><span>${esc(d.employer_name)}</span><strong>Beneficio</strong><span>${esc(d.benefit_name)}</span></div></div><div class="card"><h3>Postulante</h3><div class="kv"><strong>Nombre</strong><span>${esc(d.last_names)}, ${esc(d.first_names)}</span><strong>Documento</strong><span>${esc(d.document_type)} ${esc(d.document_number)}</span><strong>CUIL</strong><span>${esc(d.cuil)}</span><strong>Email</strong><span>${esc(d.email)}</span></div></div><div class="card"><h3>Documentación</h3>${baseDocs().map(x=>`• ${esc(x.label)}: ${docs[x.id]?.filename?'cargado':'pendiente'}`).join("<br>")}</div>${miss.length?`<div class="notice warn">Falta documentación obligatoria: ${miss.map(x=>esc(x.label)).join(", ")}. Puede volver a cargarla o enviar la solicitud como pendiente con justificación fundada.</div><button type="button" class="btn ghost" onclick="goDocs()">Volver a cargar documentación</button> <button type="button" class="btn warn" onclick="allowPending()">Enviar como pendiente y justificar</button>`:''}`}
 window.goDocs=()=>{current=6;renderSection()};window.allowPending=()=>{qs("#justificationBox").classList.remove("hidden");current=6;renderSection();setTimeout(()=>form.elements.missing_docs_justification.focus(),100)}
-async function submit(){const err=qs("#finalError"),ok=qs("#finalBox"),sending=qs("#sending");err.classList.add("hidden");ok.classList.add("hidden");if(APPS_SCRIPT_URL.includes("PEGAR_AQUI")){err.textContent="Falta configurar la URL de Apps Script en index.html.";err.classList.remove("hidden");return}if(!validateCurrent())return;if(!validateNoRepeatedIdentifiers())return;const miss=missingDocs();if(miss.length&&!val("missing_docs_justification")){err.textContent="Falta documentación obligatoria. Debe cargarla o justificar fundadamente la imposibilidad antes de enviar como pendiente.";err.classList.remove("hidden");return}const data=collect();data.payload_hash=await sha256(JSON.stringify({...data,documents:data.documents.map(x=>({type:x.type,filename:x.filename,required:x.required}))}));data.declaration_text_hash=await sha256(data.declaration_text);sending.classList.remove("hidden");try{const r=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"submitApplication",payload:data})});const txt=await r.text();let j;try{j=JSON.parse(txt)}catch{j={ok:true,message:txt}}if(!j.ok)throw new Error(j.error||"Error al guardar");ok.innerHTML=`Solicitud enviada.<br><strong>Número:</strong> ${esc(j.request_id||"registrado")}<br>${j.pdf_url?`<a target="_blank" href="${j.pdf_url}">Abrir PDF generado</a>`:""}`;ok.classList.remove("hidden")}catch(ex){err.textContent="No se pudo enviar: "+ex.message;err.classList.remove("hidden")}finally{sending.classList.add("hidden")}}
+async function submit(){const err=qs("#finalError"),ok=qs("#finalBox"),sending=qs("#sending");err.classList.add("hidden");ok.classList.add("hidden");if(APPS_SCRIPT_URL.includes("PEGAR_AQUI")){err.textContent="Falta configurar la URL de Apps Script en index.html.";err.classList.remove("hidden");return}if(!validateCurrent())return;if(!validateNoRepeatedIdentifiers())return;const miss=missingDocs();if(miss.length&&!val("missing_docs_justification")){err.textContent="Falta documentación obligatoria. Debe cargarla o justificar fundadamente la imposibilidad antes de enviar como pendiente.";err.classList.remove("hidden");return}await saveDraftNow();const data=collect();data.payload_hash=await sha256(JSON.stringify({...data,documents:data.documents.map(x=>({type:x.type,filename:x.filename,required:x.required}))}));data.declaration_text_hash=await sha256(data.declaration_text);sending.classList.remove("hidden");try{const r=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"submitApplication",payload:data})});const txt=await r.text();let j;try{j=JSON.parse(txt)}catch{j={ok:true,message:txt}}if(!j.ok)throw new Error(j.error||"Error al guardar");ok.innerHTML=`Solicitud enviada.<br><strong>Número:</strong> ${esc(j.request_id||"registrado")}<br>${j.pdf_url?`<a target="_blank" href="${j.pdf_url}">Abrir PDF generado</a>`:""}`;ok.classList.remove("hidden")}catch(ex){err.textContent="No se pudo enviar: "+ex.message;err.classList.remove("hidden")}finally{sending.classList.add("hidden")}}
 
 function setViewMode(mode){
   document.body.classList.remove("force-mobile","force-desktop");
@@ -334,7 +407,7 @@ function initViewMode(){
   if(m) m.onclick = () => setViewMode("mobile");
 }
 
-console.log("e-Up RRHH formulario v17.0.0 - 2026-05-27");
+console.log("e-Up RRHH formulario v17.1.1 - 2026-05-27");
 initViewMode();
 init();
 </script>
