@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- e-Up RRHH Panel del Estudio | VERSION v17.1.5 | 2026-05-27 -->
+<!-- e-Up RRHH Panel del Estudio | VERSION v17.1.6 | 2026-05-27 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -88,7 +88,7 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
     <button type="button" id="viewModeDesktop">Vista escritorio</button>
     <button type="button" id="viewModeMobile">Vista celular</button>
   </div>
-  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v17.1.5</span>
+  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v17.1.6</span>
 </div></div></div>
 <div class="wrap"><div class="paper">
 <div class="doc-head"><div class="doc-title">Panel del Estudio</div><p class="hint center">Crear solicitud, seleccionar beneficio, generar token, enviar mail al empleador, controlar estado y cerrar trámite.</p></div>
@@ -118,7 +118,7 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
 <div id="selectedRequestBox" class="notice hidden"></div>
 </div>
 
-<div class="card"><h3>Seguimiento</h3><div class="grid"><div class="field"><label>Filtrar por cliente</label><input id="filterClient"></div><div class="field"><label>Filtrar por estado</label><select id="filterStatus"><option value="">Todos</option><option>Mail enviado al empleador</option><option>Formulario iniciado</option><option>Carga completa</option><option>Carga completa con documentación pendiente</option><option>Observado</option><option>Cerrado</option><option>Anulada</option><option>Eliminada prueba</option><option value="__eliminadas__">Solo eliminadas/anuladas</option></select></div></div><button class="btn ghost" id="refreshDash">Actualizar dashboard</button><div style="overflow:auto;margin-top:10px"><table class="table" id="dashTable"></table></div>
+<div class="card"><h3>Seguimiento</h3><div class="grid"><div class="field"><label>Filtrar por cliente</label><input id="filterClient"></div><div class="field"><label>Filtrar por estado</label><select id="filterStatus"><option value="">Todos</option><option>Mail enviado al empleador</option><option>Formulario iniciado</option><option>Carga completa</option><option>Carga completa con documentación pendiente</option><option>Observado</option><option>Cerrado</option><option>Anulada</option><option>Eliminada prueba</option><option value="__eliminadas__">Solo eliminadas/anuladas</option></select></div></div><div class="actions"><button class="btn ghost" id="refreshDash">Actualizar dashboard</button><button class="btn ghost" id="toggleDashListBtn">Ocultar listado</button></div><div id="dashListBox" style="overflow:auto;margin-top:10px"><table class="table" id="dashTable"></table></div>
 <div id="requestDetailBox" class="card hidden"></div>
 </div>
 </section>
@@ -293,7 +293,7 @@ Estudio</textarea></div>
 </section>
 </main></div></div></div>
 <script>
-const APP_VERSION = "v17.1.5";
+const APP_VERSION = "v17.1.6";
 const APP_BUILD_DATE = "2026-05-27";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt3ezc7-m7lXcQTwfUfAaAkU-tkipho7JYko4bdsoRmruzON43Y8Rp2_klo8LTzX6O/exec";
 const FORM_URL = "https://clgest.github.io/auditoria-system/";
@@ -526,6 +526,7 @@ function bind(){
     if(el && typeof fn === "function") el[ev] = fn;
   };
   on("refreshDash", loadDashboard);
+  on("toggleDashListBtn", toggleDashboardList);
   on("filterClient", applyDashboardFilters, "oninput");
   on("request_search_text", filterRequestsSelect, "oninput");
   on("request_saved_select", loadSelectedRequestFromSelect, "onchange");
@@ -595,6 +596,22 @@ async function loadDashboard(){
   }
 }
 
+
+
+function toggleDashboardList(){
+  const box=qs("#dashListBox"), btn=qs("#toggleDashListBtn");
+  if(!box) return;
+  const hidden = box.classList.toggle("hidden");
+  if(btn) btn.textContent = hidden ? "Mostrar listado" : "Ocultar listado";
+}
+
+function closeDetailView(){
+  const box=qs("#requestDetailBox");
+  if(box){
+    box.className="card hidden";
+    box.innerHTML="";
+  }
+}
 
 function requestOptionLabel(r){
   const formal = r.numero_solicitud || r.id || "";
@@ -1141,9 +1158,17 @@ function selectRequestAndOpen(id, action){
 function openFormData(id){ openDetail(id); setTimeout(()=>{ const box=qs("#requestDetailBox"); if(box) box.scrollIntoView({behavior:"smooth",block:"start"}); },200); }
 async function copyText(text){ if(!text){ alert("No hay texto para copiar."); return; } try{ await navigator.clipboard.writeText(text); alert("Copiado."); }catch(e){ prompt("Copiar manualmente:", text); } }
 async function openDetail(id){
-  const box=qs("#requestDetailBox"); box.className="card"; box.innerHTML="<h3>Detalle de solicitud</h3><p>Cargando...</p>";
-  try{ if(APPS_SCRIPT_URL.includes("PEGAR_AQUI")) throw new Error("Falta configurar APPS_SCRIPT_URL."); const r=await fetch(APPS_SCRIPT_URL+"?action=getRequestDetail&request_id="+encodeURIComponent(id)); const j=await r.json(); if(!j.ok) throw new Error(j.error||"No se pudo cargar detalle."); renderDetail(j); }
-  catch(e){ box.innerHTML=`<h3>Detalle de solicitud</h3><div class="notice bad">${esc(e.message)}</div>`; }
+  const box=qs("#requestDetailBox");
+  box.className="card";
+  box.innerHTML="<h3>Detalle de solicitud</h3><p>Cargando...</p>";
+  try{
+    if(APPS_SCRIPT_URL.includes("PEGAR_AQUI")) throw new Error("Falta configurar APPS_SCRIPT_URL.");
+    const r=await fetch(APPS_SCRIPT_URL+"?action=getRequestDetail&request_id="+encodeURIComponent(id));
+    const j=await r.json();
+    if(!j.ok) throw new Error(j.error||"No se pudo cargar detalle.");
+    renderDetail(j);
+  }
+  catch(e){ box.innerHTML=`<div class="actions"><button class="btn ghost" onclick="closeDetailView()">Cerrar vista</button></div><h3>Detalle de solicitud</h3><div class="notice bad">${esc(e.message)}</div>`; }
 }
 function renderDetail(j){
   const r=j.request||{}, docs=j.documents||[], pdfs=j.pdfs||[], mails=j.mails||[], audit=j.audit||[], applicant=(j.applicant||[])[0]||{}, accept=(j.acceptances||[])[0]||{};
@@ -1153,9 +1178,16 @@ function renderDetail(j){
   const pfamily=(payload.family||[]);
   const prefs=(payload.references||[]);
   const domicilio=[payload.street||"",payload.street_number||"",payload.floor||"",payload.neighborhood||"",payload.city||"",payload.department||"",payload.province||"",payload.postal_code||""].filter(Boolean).join(" - ");
+  const statusLabel = payloadStatus==="final" ? "Datos finales del formulario" :
+    payloadStatus==="final_por_registros" ? "Datos finales reconstruidos desde registros" :
+    payloadStatus==="borrador" ? "Borrador parcial guardado" :
+    payloadStatus==="parcial_por_registros" ? "Datos parciales reconstruidos desde registros" :
+    "Sin datos de formulario";
   qs("#requestDetailBox").className="card";
   qs("#requestDetailBox").innerHTML=`
-    <h3>Detalle de solicitud ${esc(r.numero_solicitud||r.id_solicitud||"")}</h3>
+    <div class="actions"><button class="btn ghost" onclick="closeDetailView()">Cerrar vista</button></div>
+    <h3>Formulario / detalle operativo ${esc(r.numero_solicitud||r.id_solicitud||"")}</h3>
+    <div class="notice ok"><strong>Estado de lectura:</strong> ${esc(statusLabel)}. ${j.documents_raw_count && j.documents_raw_count>docs.length ? "Se ocultaron duplicados técnicos de documentos." : ""}</div>
     <div class="grid">
       <div class="card"><h3>Solicitud</h3><div class="kv">
         <strong>Nº formal</strong><span>${esc(r.numero_solicitud||"")}</span>
@@ -1171,19 +1203,19 @@ function renderDetail(j){
       <div class="card"><h3>Postulante</h3><div class="kv">
         <strong>Nombre</strong><span>${esc(applicant.apellido||payload.last_names||"")}, ${esc(applicant.nombres||payload.first_names||"")}</span>
         <strong>CUIL</strong><span>${esc(applicant.cuil||payload.cuil||r.cuil_postulante||"")}</span>
+        <strong>Documento</strong><span>${esc((applicant.tipo_documento||payload.document_type||"")+" "+(applicant.numero_documento||payload.document_number||""))}</span>
         <strong>Email</strong><span>${esc(applicant.email||payload.email||r.email_postulante||"")}</span>
+        <strong>Teléfono</strong><span>${esc(applicant.telefono||payload.phone||"")}</span>
         <strong>DDJJ</strong><span>${accept.id_aceptacion?"Aceptada":"Sin aceptación final registrada"}</span>
       </div></div>
     </div>
 
-    <h3>Formulario guardado (${esc(payloadStatus)})</h3>
+    <h3>Datos cargados por el postulante</h3>
     ${Object.keys(payload).length?`
       <div class="card"><div class="kv">
-        <strong>Documento</strong><span>${esc(payload.document_type||"")} ${esc(payload.document_number||"")}</span>
-        <strong>Fecha nacimiento</strong><span>${esc(payload.birth_date||"")}</span>
-        <strong>Nacionalidad</strong><span>${esc(payload.nationality||"")}</span>
-        <strong>Estado civil</strong><span>${esc(payload.civil_status||payload.marital_status||"")}</span>
-        <strong>Teléfono</strong><span>${esc(payload.phone||"")}</span>
+        <strong>Fecha nacimiento</strong><span>${esc(applicant.fecha_nacimiento||payload.birth_date||"")}</span>
+        <strong>Nacionalidad</strong><span>${esc(applicant.nacionalidad||payload.nationality||"")}</span>
+        <strong>Estado civil</strong><span>${esc(applicant.estado_civil||payload.civil_status||payload.marital_status||"")}</span>
         <strong>Domicilio declarado</strong><span>${esc(domicilio||"")}</span>
         <strong>Último empleador</strong><span>${esc([payload.last_employer_cuit,payload.last_employer_name,payload.last_employer_exit_date,payload.previous_position].filter(Boolean).join(" - "))}</span>
         <strong>Desempleo</strong><span>${esc(payload.unemployment_benefit||"")}</span>
@@ -1193,21 +1225,21 @@ function renderDetail(j){
         <strong>Justificación pendientes</strong><span>${esc(payload.missing_docs_justification||"")}</span>
       </div></div>
       <h3>Documentación informada en formulario</h3>
-      ${pdocs.length?`<table class="table"><tr><th>Tipo</th><th>Archivo</th><th>Estado</th></tr>${pdocs.map(d=>`<tr><td>${esc(d.type||d.label||"")}</td><td>${esc(d.filename||"")}</td><td>${d.loaded||d.filename?"Cargado/informado":"Pendiente"}</td></tr>`).join("")}</table>`:"<p>Sin documentación informada en borrador.</p>"}
+      ${pdocs.length?`<table class="table"><tr><th>Tipo</th><th>Archivo</th><th>Estado</th></tr>${pdocs.map(d=>`<tr><td>${esc(d.type||d.label||"")}</td><td>${esc(d.filename||"")}</td><td>${d.loaded||d.filename?"Cargado/informado":"Pendiente"}</td></tr>`).join("")}</table>`:"<p>Sin documentación informada dentro del payload. Ver documentos guardados en Drive.</p>"}
       <h3>Familiares declarados</h3>
       ${pfamily.length?`<table class="table"><tr><th>Parentesco</th><th>Nombre</th><th>DNI</th><th>Fecha nac.</th></tr>${pfamily.map(f=>`<tr><td>${esc(f.relationship||"")}</td><td>${esc(f.name||"")}</td><td>${esc(f.dni||"")}</td><td>${esc(f.birth_date||"")}</td></tr>`).join("")}</table>`:"<p>Sin familiares/cargas declaradas.</p>"}
       <h3>Referencias / empleos anteriores declarados</h3>
       ${prefs.length?`<table class="table"><tr><th>Empleador</th><th>Contacto</th><th>Período</th><th>Puesto</th></tr>${prefs.map(x=>`<tr><td>${esc(x.employer_name||"")}</td><td>${esc(x.contact_name||"")}</td><td>${esc(x.period||"")}</td><td>${esc(x.position||"")}</td></tr>`).join("")}</table>`:"<p>Sin referencias declaradas.</p>"}
-    `:"<p>No hay datos parciales guardados todavía. El botón Formulario mostrará información cuando el postulante empiece a cargar y el autosave registre el borrador.</p>"}
+    `:"<p>No hay payload de formulario. Se muestran los registros finales disponibles en Postulante, Documentos, DDJJ y PDF.</p>"}
 
     <h3>Documentos efectivamente cargados en Drive</h3>
     ${docs.length?`<table class="table"><tr><th>Tipo</th><th>Archivo</th><th>Estado</th><th>Acceso</th></tr>${docs.map(d=>`<tr><td>${esc(d.tipo_documento)}</td><td>${esc(d.nombre_archivo_normalizado||d.nombre_archivo)}</td><td>${esc(d.estado)}</td><td>${d.url_drive?`<a target="_blank" href="${esc(d.url_drive)}">Abrir</a>`:""}</td></tr>`).join("")}</table>`:"<p>Sin documentos registrados en Drive.</p>"}
 
     <h3>PDF generados</h3>
-    ${pdfs.length?`<table class="table"><tr><th>Tipo</th><th>Hash</th><th>Acceso</th></tr>${pdfs.map(p=>`<tr><td>${esc(p.tipo_pdf)}</td><td class="mono">${esc(p.hash_pdf)}</td><td>${p.url_drive?`<a target="_blank" href="${esc(p.url_drive)}">Abrir</a>`:""}</td></tr>`).join("")}</table>`:"<p>Sin PDF registrado. El PDF se genera al enviar la solicitud; mientras tanto use Formulario para ver datos parciales.</p>"}
+    ${pdfs.length?`<table class="table"><tr><th>Tipo</th><th>Hash</th><th>Acceso</th></tr>${pdfs.map(p=>`<tr><td>${esc(p.tipo_pdf)}</td><td class="mono">${esc(p.hash_pdf)}</td><td>${p.url_drive?`<a target="_blank" href="${esc(p.url_drive)}">Abrir</a>`:""}</td></tr>`).join("")}</table>`:"<p>Sin PDF registrado.</p>"}
     <h3>Subir copia firmada por empleado</h3><div class="grid"><div class="field"><input type="file" id="signedPdfFile" accept=".pdf,image/*"></div><div class="field"><button class="btn ghost" onclick="uploadSignedPdf('${esc(r.id_solicitud)}')">Subir copia firmada</button></div></div><div id="signedPdfResult" class="notice hidden"></div>
     <h3>Mail log</h3>${mails.length?`<table class="table"><tr><th>Fecha</th><th>Destinatario</th><th>Motivo</th><th>Estado</th></tr>${mails.map(m=>`<tr><td>${esc(m.sent_at)}</td><td>${esc(m.destinatario_email)}</td><td>${esc(m.motivo)}</td><td>${esc(m.estado)}</td></tr>`).join("")}</table>`:"<p>Sin mails registrados.</p>"}
-    <h3>Auditoría</h3>${audit.length?`<table class="table"><tr><th>Fecha</th><th>Acción</th><th>Detalle</th></tr>${audit.slice(-12).reverse().map(a=>`<tr><td>${esc(a.created_at)}</td><td>${esc(a.accion)}</td><td>${esc(a.detalle)}</td></tr>`).join("")}</table>`:"<p>Sin eventos.</p>"}
+    <h3>Auditoría operativa</h3>${audit.length?`<table class="table"><tr><th>Fecha</th><th>Autor</th><th>Acción</th><th>Detalle</th></tr>${audit.slice(-15).reverse().map(a=>`<tr><td>${esc(a.fecha)}</td><td>${esc(a.autor)}</td><td>${esc(a.accion_operativa)}</td><td>${esc(a.detalle)}</td></tr>`).join("")}</table>`:"<p>Sin eventos.</p>"}
   `;
 }
 function fileToBase64Panel(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
@@ -1406,7 +1438,7 @@ function initViewMode(){
   if(m) m.onclick = () => setViewMode("mobile");
 }
 
-console.log("e-Up RRHH panel v17.1.5 - 2026-05-27");
+console.log("e-Up RRHH panel v17.1.6 - 2026-05-27");
 initViewMode();
 init();
 </script>
