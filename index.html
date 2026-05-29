@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- e-Up RRHH Formulario Postulante | VERSION v17.1.8 | 2026-05-27 -->
+<!-- e-Up RRHH Formulario Postulante | VERSION v18.0.0 | 2026-05-27 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -81,7 +81,7 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
     <button type="button" id="viewModeDesktop">Vista escritorio</button>
     <button type="button" id="viewModeMobile">Vista celular</button>
   </div>
-  Los campos con <span class="req">*</span> son obligatorios <span class="version-badge">Formulario v17.1.8</span>
+  Los campos con <span class="req">*</span> son obligatorios <span class="version-badge">Formulario v18.0.0</span>
 </div></div></div>
 <div class="wrap">
 <form id="form" class="paper" novalidate>
@@ -214,8 +214,8 @@ Esta solicitud fue generada por el Estudio y remitida al empleador. Usted solo d
 </form>
 </div>
 <script>
-const APP_VERSION = "v17.1.8";
-const APP_BUILD_DATE = "2026-05-27";
+const APP_VERSION = "v18.0.0";
+const APP_BUILD_DATE = "2026-05-29";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt3ezc7-m7lXcQTwfUfAaAkU-tkipho7JYko4bdsoRmruzON43Y8Rp2_klo8LTzX6O/exec";
 const DECLARATION_VERSION = "DDJJ-RRHH-2026-04";
 const DEFAULT_DECLARATION = `Declaro bajo juramento que la información consignada en la presente solicitud es completa, exacta y verdadera, y que mi situación laboral, previsional y/o social declarada es la vigente a la fecha de presentación.
@@ -290,7 +290,7 @@ function applyConfig(c){
 }
 function renderNav(){qs("#nav").innerHTML=STEPS.map((s,i)=>`<button type="button" class="${i===current?'active':''}" data-jump="${i}">${i+1}. ${s}</button>`).join("");qsa("[data-jump]").forEach(b=>b.onclick=()=>{current=Number(b.dataset.jump);renderSection();})}
 function renderSection(){qsa(".section").forEach((s,i)=>s.classList.toggle("active",i===current));qs("#prevBtn").disabled=current===0;qs("#nextBtn").classList.toggle("hidden",current===8);if(current===6)renderDocs();if(current===8)renderPreview();renderNav();scrollTo(0,0)}
-function bind(){qsa("[data-radio]").forEach(g=>g.addEventListener("click",e=>{const l=e.target.closest(".choice");if(!l)return;const input=l.querySelector("input");input.checked=true;g.querySelectorAll(".choice").forEach(x=>x.classList.remove("selected"));l.classList.add("selected");updateConditional()}));form.addEventListener("input",updateConditional);form.addEventListener("input",scheduleDraftSave);form.addEventListener("change",scheduleDraftSave);qs("#prevBtn").onclick=()=>{if(current>0){current--;renderSection()}};qs("#nextBtn").onclick=()=>{if(validateCurrent()){current++;renderSection()}};qs("#resetBtn").onclick=()=>{if(confirm("¿Limpiar formulario?"))location.reload()};qs("#addFamily").onclick=()=>{family.push({relationship:"Hijo/a",name:"",birth_date:"",dni:"",studies:"No"});renderFamily();renderDocs()};qs("#addRef").onclick=()=>{refs.push({employer_cuit:"",employer_name:"",contact_name:"",contact_role:"",contact_email:"",contact_phone:"",period:"",position:"",authorized:"Sí"});renderRefs()};qs("#submitBtn").onclick=submit}
+function bind(){qsa("[data-radio]").forEach(g=>g.addEventListener("click",e=>{const l=e.target.closest(".choice");if(!l)return;const input=l.querySelector("input");input.checked=true;g.querySelectorAll(".choice").forEach(x=>x.classList.remove("selected"));l.classList.add("selected");updateConditional()}));form.addEventListener("input",updateConditional);form.addEventListener("input",scheduleDraftSave);form.addEventListener("change",scheduleDraftSave);qs("#prevBtn").onclick=()=>{if(current>0){current--;renderSection()}};qs("#nextBtn").onclick=async()=>{if(validateCurrent()){await saveDraftNow();current++;renderSection()}};qs("#resetBtn").onclick=()=>{if(confirm("¿Limpiar formulario?"))location.reload()};qs("#addFamily").onclick=()=>{family.push({relationship:"Hijo/a",name:"",birth_date:"",dni:"",studies:"No"});renderFamily();renderDocs()};qs("#addRef").onclick=()=>{refs.push({employer_cuit:"",employer_name:"",contact_name:"",contact_role:"",contact_email:"",contact_phone:"",period:"",position:"",authorized:"Sí"});renderRefs()};qs("#submitBtn").onclick=submit}
 function updateConditional(){const pension=val("pension_benefit")==="Sí";form.elements.benefit_number.disabled=!pension;if(!pension)form.elements.benefit_number.value="";const cons=val("construction_book")==="Sí";form.elements.construction_book_detail.disabled=!cons;if(!cons)form.elements.construction_book_detail.value="";const dis=val("disability")==="Sí";form.elements.disability_description.disabled=!dis;if(!dis)form.elements.disability_description.value="";renderDocs()}
 
 function validateNoRepeatedIdentifiers(){
@@ -331,7 +331,77 @@ function renderFamily(){qs("#family").innerHTML=family.length?family.map((f,i)=>
 function renderRefs(){qs("#refs").innerHTML=refs.length?refs.map((r,i)=>`<div class="card"><div class="grid"><div class="field"><label>CUIT empleador anterior</label><input data-ref="employer_cuit" data-i="${i}" maxlength="11" value="${esc(r.employer_cuit)}"></div><div class="field"><label>Nombre / razón social</label><input data-ref="employer_name" data-i="${i}" value="${esc(r.employer_name)}"></div><div class="field"><label>Persona de contacto</label><input data-ref="contact_name" data-i="${i}" value="${esc(r.contact_name)}"></div><div class="field"><label>Cargo del contacto</label><input data-ref="contact_role" data-i="${i}" value="${esc(r.contact_role)}"></div><div class="field"><label>Email</label><input data-ref="contact_email" data-i="${i}" value="${esc(r.contact_email)}"></div><div class="field"><label>Teléfono</label><input data-ref="contact_phone" data-i="${i}" value="${esc(r.contact_phone)}"></div><div class="field"><label>Período trabajado</label><input data-ref="period" data-i="${i}" value="${esc(r.period)}"></div><div class="field"><label>Puesto desempeñado</label><input data-ref="position" data-i="${i}" value="${esc(r.position)}"></div><div class="field full"><label>Autoriza consulta objetiva de referencia laboral</label><select data-ref="authorized" data-i="${i}"><option ${r.authorized==="Sí"?'selected':''}>Sí</option><option ${r.authorized==="No"?'selected':''}>No</option></select></div><div class="field"><button type="button" class="btn danger" onclick="removeRef(${i})">Eliminar</button></div></div></div>`).join(""):'<div class="intro">Sin referencias laborales informadas.</div>';qsa("[data-ref]").forEach(el=>el.oninput=()=>{refs[Number(el.dataset.i)][el.dataset.ref]=el.value})}
 window.removeFamily=i=>{family.splice(i,1);renderFamily();renderDocs()};window.removeRef=i=>{refs.splice(i,1);renderRefs()};
 function baseDocs(){let l=[{id:"photo",label:"Foto / imagen del postulante",required:!!requestConfig.photo_required,help:null},{id:"dni_front",label:"DNI frente",required:true},{id:"dni_back",label:"DNI dorso",required:true},{id:"cuil_certificate",label:"Constancia de CUIL",required:true,help:"cuil"},{id:"codem",label:"CODEM / Obra Social",required:true,help:"codem"},{id:"negative_anses",label:"Certificación Negativa ANSES",required:true,help:"negative_anses"},{id:"labor_history",label:"Historia Laboral ANSES",required:true,help:"labor_history"}];(requestConfig.benefit_required_docs||[]).forEach(x=>l.push({...x,required:x.required!==false}));if(val("disability")==="Sí")l.push({id:"disability_certificate",label:"Certificado de discapacidad/incapacidad vigente",required:true});if(val("construction_book")==="Sí")l.push({id:"construction_book_file",label:"Libreta Fondo de Cese Laboral / constancia",required:true});if(family.length)l.push({id:"family_docs",label:"Documentación de cargas de familia",required:true});const seen=new Set();return l.filter(d=>{if(seen.has(d.id))return false;seen.add(d.id);return true})}
-function renderDocs(){const list=baseDocs();qs("#docChecklist").innerHTML=list.map(d=>{const loaded=docs[d.id]?.filename;return `<div class="doc-item"><div class="doc-line"><div><strong>${esc(d.label)}</strong> ${d.required?'<span class="tag required">obligatorio</span>':'<span class="tag optional">opcional</span>'} ${loaded?'<span class="tag loaded">cargado</span>':'<span class="tag warn">pendiente</span>'}<div class="help">${loaded?esc(docs[d.id].filename):'Debe subir archivo o tomar foto.'}</div>${d.help?`<div><a target="_blank" href="${HELP_LINKS[d.help]}">Cómo obtenerlo</a></div>`:''}</div><label class="btn ghost" style="margin:0;cursor:pointer">Subir / tomar foto<input type="file" accept=".pdf,image/*" capture="environment" data-docid="${d.id}" hidden></label></div></div>`}).join("");qsa("[data-docid]").forEach(inp=>inp.onchange=async e=>{const file=e.target.files[0];if(!file)return;const b64=await fileToBase64(file);docs[inp.dataset.docid]={type:(baseDocs().find(d=>d.id===inp.dataset.docid)||{}).label||inp.dataset.docid,filename:file.name,mimeType:file.type||"application/octet-stream",base64:b64.split(",")[1],required:(baseDocs().find(d=>d.id===inp.dataset.docid)||{}).required};renderDocs()})}
+
+async function uploadDocumentNow(docId, file){
+  const info = baseDocs().find(d=>d.id===docId) || {id:docId,label:docId,required:false};
+  const statusId = "docStatus_" + docId;
+  const st = qs("#" + statusId);
+  if(st) st.textContent = "Leyendo archivo...";
+  const b64 = await fileToBase64(file);
+  const payload = collectDraftPayload();
+  const body = {
+    request_token: val("request_token"),
+    doc_id: docId,
+    doc_type: info.label || docId,
+    label: info.label || docId,
+    filename: file.name,
+    mimeType: file.type || "application/octet-stream",
+    base64: b64.split(",")[1],
+    required: !!info.required,
+    payload: payload
+  };
+  if(st) st.textContent = "Subiendo y registrando en el legajo...";
+  const r = await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"uploadDocumentImmediate",payload:body})});
+  const j = await r.json();
+  if(!j.ok) throw new Error(j.error || "No se pudo subir documento.");
+  const saved = j.document || {};
+  docs[docId] = {
+    type: info.label || docId,
+    label: info.label || docId,
+    filename: file.name,
+    mimeType: file.type || "application/octet-stream",
+    required: !!info.required,
+    uploaded: true,
+    file_id: saved.file_id || saved.id || "",
+    url: saved.url || "",
+    hash: saved.hash || "",
+    duplicated: !!saved.duplicated
+  };
+  await saveDraftNow();
+  return j;
+}
+
+function renderDocs(){
+  const list=baseDocs();
+  qs("#docChecklist").innerHTML=list.map(d=>{
+    const loaded=docs[d.id]?.filename;
+    const uploaded=!!docs[d.id]?.uploaded;
+    const tag = uploaded ? '<span class="tag loaded">subido y registrado</span>' : (loaded ? '<span class="tag loaded">seleccionado</span>' : '<span class="tag warn">pendiente</span>');
+    const detail = uploaded
+      ? `${esc(docs[d.id].filename)} — guardado en Drive/Sheets${docs[d.id].duplicated ? " (ya existía)" : ""}`
+      : (loaded ? esc(docs[d.id].filename) : 'Debe subir archivo o tomar foto.');
+    return `<div class="doc-item"><div class="doc-line"><div><strong>${esc(d.label)}</strong> ${d.required?'<span class="tag required">obligatorio</span>':'<span class="tag optional">opcional</span>'} ${tag}<div class="help">${detail}</div><div class="help" id="docStatus_${d.id}"></div>${d.help?`<div><a target="_blank" href="${HELP_LINKS[d.help]}">Cómo obtenerlo</a></div>`:''}</div><label class="btn ghost" style="margin:0;cursor:pointer">Subir / tomar foto<input type="file" accept=".pdf,image/*" capture="environment" data-docid="${d.id}" hidden></label></div></div>`;
+  }).join("");
+  qsa("[data-docid]").forEach(inp=>inp.onchange=async e=>{
+    const file=e.target.files[0];
+    if(!file)return;
+    if(APPS_SCRIPT_URL.includes("PEGAR_AQUI")){
+      const b64=await fileToBase64(file);
+      const info=baseDocs().find(d=>d.id===inp.dataset.docid)||{};
+      docs[inp.dataset.docid]={type:info.label||inp.dataset.docid,label:info.label||inp.dataset.docid,filename:file.name,mimeType:file.type||"application/octet-stream",base64:b64.split(",")[1],required:!!info.required,uploaded:false};
+      renderDocs();
+      return;
+    }
+    try{
+      await uploadDocumentNow(inp.dataset.docid,file);
+      renderDocs();
+    }catch(ex){
+      const st=qs("#docStatus_"+inp.dataset.docid);
+      if(st) st.textContent="Error: "+ex.message;
+      alert("No se pudo subir el documento: "+ex.message);
+    }
+  });
+}
 function missingDocs(){return baseDocs().filter(d=>d.required&&!docs[d.id]?.filename)}
 function collect(){const fd=new FormData(form),data={};fd.forEach((v,k)=>data[k]=v);data.employer_cuit=digits(data.employer_cuit);data.cuil=digits(data.cuil);data.accepted_cuil=digits(data.accepted_cuil);data.last_employer_cuit=digits(data.last_employer_cuit);data.family=family;data.references=refs;data.documents=Object.values(docs);data.missing_documents=missingDocs().map(d=>d.label);data.status=data.missing_documents.length?"submitted_pending_documents":"submitted_complete";data.declaration_version=DECLARATION_VERSION;data.declaration_text=requestConfig.benefit_declaration||DEFAULT_DECLARATION;data.client_timestamp=new Date().toISOString();data.user_agent=navigator.userAgent;data.page_url=location.href;return data}
 
@@ -350,14 +420,41 @@ function applyDraftPayload(d){
   });
   if(Array.isArray(d.family)){ family=d.family; renderFamily(); }
   if(Array.isArray(d.references)){ refs=d.references; renderRefs(); }
+  if(Array.isArray(d.documents)){
+    d.documents.forEach(doc=>{
+      const match = baseDocs().find(x => String(x.label).toLowerCase() === String(doc.type||doc.label).toLowerCase());
+      const id = match ? match.id : (doc.id || doc.type || doc.label);
+      docs[id] = {
+        type: doc.type || doc.label || id,
+        label: doc.label || doc.type || id,
+        filename: doc.filename || "",
+        required: !!doc.required,
+        uploaded: !!doc.uploaded || !!doc.file_id || !!doc.url || !!doc.hash,
+        file_id: doc.file_id || "",
+        url: doc.url || "",
+        hash: doc.hash || ""
+      };
+    });
+  }
   updateConditional();
+  renderDocs();
 }
 
 function collectDraftPayload(){
   const data=collect();
   data.current_step=current;
   data.client_autosave_at=new Date().toISOString();
-  data.documents=(data.documents||[]).map(d=>({type:d.type,label:d.label,filename:d.filename,required:!!d.required,loaded:!!d.filename}));
+  data.documents=(data.documents||[]).map(d=>({
+    type:d.type||d.label||"",
+    label:d.label||d.type||"",
+    filename:d.filename||"",
+    required:!!d.required,
+    loaded:!!d.filename,
+    uploaded:!!d.uploaded,
+    file_id:d.file_id||"",
+    url:d.url||"",
+    hash:d.hash||""
+  }));
   return data;
 }
 
@@ -374,7 +471,7 @@ async function saveDraftNow(){
     const token=val("request_token");
     if(!token) return;
     const data=collectDraftPayload();
-    const r=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"saveApplicationDraft",payload:data})});
+    const r=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"saveApplicationStage",payload:data})});
     const j=await r.json();
     if(!j.ok) throw new Error(j.error||"No se pudo guardar borrador");
     if(st) st.textContent="Guardado parcial: "+(j.saved_at||"OK");
@@ -444,7 +541,7 @@ function initViewMode(){
   if(m) m.onclick = () => setViewMode("mobile");
 }
 
-console.log("e-Up RRHH formulario v17.1.8 - 2026-05-27");
+console.log("e-Up RRHH formulario v18.0.0 - 2026-05-27");
 initViewMode();
 init();
 </script>

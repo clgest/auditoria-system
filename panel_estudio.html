@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- e-Up RRHH Panel del Estudio | VERSION v17.1.8 | 2026-05-27 -->
+<!-- e-Up RRHH Panel del Estudio | VERSION v18.0.0 | 2026-05-27 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -88,12 +88,13 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
     <button type="button" id="viewModeDesktop">Vista escritorio</button>
     <button type="button" id="viewModeMobile">Vista celular</button>
   </div>
-  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v17.1.8</span>
+  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v18.0.0</span>
 </div></div></div>
 <div class="wrap"><div class="paper">
 <div class="doc-head"><div class="doc-title">Panel del Estudio</div><p class="hint center">Crear solicitud, seleccionar beneficio, generar token, enviar mail al empleador, controlar estado y cerrar trámite.</p></div>
 <div class="layout"><nav id="nav" class="nav"></nav><main class="content">
 <section class="section active" data-step="0"><h2>Dashboard</h2>
+<div id="systemDiagnosticsBox" class="notice warn">Diagnóstico del sistema: pendiente de carga.</div><div class="actions"><button type="button" class="btn ghost" id="runSelfTestBtn">Probar escritura sistema</button></div>
 <div class="help-inline"><button type="button" class="help-btn" onclick="toggleHelp('help_dashboard')">Ayuda</button><div class="help-panel" id="help_dashboard">Controla solicitudes activas, documentación pendiente, beneficios y alertas. El filtro Todos no muestra anuladas o eliminadas.</div></div>
 <div class="grid">
 <div class="card"><h3>Solicitudes abiertas</h3><div class="doc-title" id="k_open">0</div></div>
@@ -293,8 +294,8 @@ Estudio</textarea></div>
 </section>
 </main></div></div></div>
 <script>
-const APP_VERSION = "v17.1.8";
-const APP_BUILD_DATE = "2026-05-27";
+const APP_VERSION = "v18.0.0";
+const APP_BUILD_DATE = "2026-05-29";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt3ezc7-m7lXcQTwfUfAaAkU-tkipho7JYko4bdsoRmruzON43Y8Rp2_klo8LTzX6O/exec";
 const FORM_URL = "https://clgest.github.io/auditoria-system/";
 const SECTIONS=["Dashboard","Cliente","Beneficio","Crear link","Lote de altas","Centro comunicaciones","Alta Temprana","Cierre"];
@@ -460,6 +461,42 @@ function renderBenefit(){
   toggleBenefitEdit(false);
 }
 
+
+async function loadSystemDiagnostics(){
+  const box = qs("#systemDiagnosticsBox");
+  if(!box) return;
+  try{
+    if(APPS_SCRIPT_URL.includes("PEGAR_AQUI")) throw new Error("Falta configurar APPS_SCRIPT_URL.");
+    const r = await fetch(APPS_SCRIPT_URL + "?action=systemDiagnostics");
+    const j = await r.json();
+    const ok = !!j.ok;
+    box.className = "notice " + (ok ? "ok" : "bad");
+    box.innerHTML = `<strong>Diagnóstico sistema:</strong> ${ok ? "OK" : "REVISAR"}<br>
+      Panel: ${esc(APP_VERSION)} | Backend: ${esc(j.version||"sin dato")}<br>
+      Base activa: ${esc(j.spreadsheet_name||"")}<br>
+      Spreadsheet ID: <span class="mono">${esc(j.spreadsheet_id||"")}</span><br>
+      Drive raíz: ${esc(j.root_folder_name||"")}<br>
+      ${j.spreadsheet_url?`<a target="_blank" href="${esc(j.spreadsheet_url)}">Abrir base activa</a>`:""} ${j.root_folder_url?` | <a target="_blank" href="${esc(j.root_folder_url)}">Abrir carpeta Drive</a>`:""}<br>
+      ${j.missing_sheets && j.missing_sheets.length ? "Hojas faltantes: " + esc(j.missing_sheets.join(", ")) : "Hojas esperadas: verificadas."}`;
+  }catch(e){
+    box.className = "notice bad";
+    box.textContent = "No se pudo obtener diagnóstico: " + e.message;
+  }
+}
+
+async function runSystemSelfTest(){
+  const box = qs("#systemDiagnosticsBox");
+  try{
+    const r = await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"runSystemSelfTest",payload:{}})});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error || "Fallo self-test");
+    await loadSystemDiagnostics();
+    alert("Prueba de escritura OK en audit_log.");
+  }catch(e){
+    if(box){ box.className="notice bad"; box.textContent="Fallo prueba de escritura: "+e.message; }
+  }
+}
+
 async function init(){
   try{ await loadBenefitsCatalog(); }catch(e){ console.error("Error cargando catálogo de beneficios", e); }
   try{
@@ -477,6 +514,7 @@ async function init(){
   try{ loadEmployers(); }catch(e){ console.error("Error cargando clientes", e); }
   try{ loadBenefitDashboard(); }catch(e){ console.error("Error benefit dashboard", e); }
   try{ checkBackendVersion(); }catch(e){ console.error("Error backend", e); }
+  try{ loadSystemDiagnostics(); }catch(e){ console.error("Error diagnóstico", e); }
   try{ loadDashboard(); }catch(e){ console.error("Error dashboard", e); }
 }
 
@@ -548,6 +586,7 @@ function bind(){
     if(el && typeof fn === "function") el[ev] = fn;
   };
   on("refreshDash", loadDashboard);
+  on("runSelfTestBtn", runSystemSelfTest);
   on("toggleDashListBtn", toggleDashboardList);
   on("filterClient", applyDashboardFilters, "oninput");
   on("request_search_text", filterRequestsSelect, "oninput");
@@ -596,9 +635,9 @@ async function checkBackendVersion(){
     const r=await fetch(APPS_SCRIPT_URL+'?action=setupInfo');
     const j=await r.json();
     const backend=j.version||'sin versión';
-    const ok=backend==='v17.1.8';
+    const ok=backend==='v18.0.0';
     box.className='notice '+(ok?'ok':'bad');
-    box.innerHTML='<strong>Backend Apps Script:</strong> '+esc(backend)+' | <strong>Panel:</strong> v17.1.8'+(ok?'':'<br>Atención: el Panel está actualizado pero Code.gs/App Web no coincide. Reemplazar Code.gs e implementar nueva versión.');
+    box.innerHTML='<strong>Backend Apps Script:</strong> '+esc(backend)+' | <strong>Panel:</strong> v18.0.0'+(ok?'':'<br>Atención: el Panel está actualizado pero Code.gs/App Web no coincide. Reemplazar Code.gs e implementar nueva versión.');
     box.classList.remove('hidden');
   }catch(e){
     box.className='notice bad'; box.textContent='No se pudo verificar versión backend: '+e.message; box.classList.remove('hidden');
@@ -799,7 +838,7 @@ function renderRows(rows){
       ? `<button onclick="openLink('${pdf}')" class="btn ghost">PDF</button>`
       : `<button class="btn secondary" disabled title="El PDF se genera cuando el postulante envía la solicitud.">Sin PDF</button>`;
     const formButton = r.link
-      ? `<button onclick="openApplicantForm('${id}')" class="btn warn" title="Abrir el formulario real de carga del postulante">Formulario</button>`
+      ? `<button onclick="openApplicantForm('${id}')" class="btn warn" title="Ver formulario guardado desde la base">Formulario guardado</button>`
       : `<button class="btn secondary" disabled>Sin formulario</button>`;
     return `<tr>
       <td>${esc(r.numero_solicitud || r.id || "")}<div class="help">${esc(r.id||"")}</div></td>
@@ -1189,12 +1228,8 @@ function selectRequestById(id){
 
 
 function openApplicantForm(id){
-  const r = selectRequestById(id) || REQUESTS_CACHE.find(x => String(x.id || x.request_id) === String(id));
-  if(!r || !r.link){
-    alert("No hay link de formulario registrado para esta solicitud.");
-    return;
-  }
-  window.open(r.link, "_blank");
+  selectRequestById(id);
+  openApplicationView(id);
 }
 
 function selectRequestAndOpen(id, action){
@@ -1211,6 +1246,21 @@ function selectRequestAndOpen(id, action){
 
 function openFormData(id){ openDetail(id); setTimeout(()=>{ const box=qs("#requestDetailBox"); if(box) box.scrollIntoView({behavior:"smooth",block:"start"}); },200); }
 async function copyText(text){ if(!text){ alert("No hay texto para copiar."); return; } try{ await navigator.clipboard.writeText(text); alert("Copiado."); }catch(e){ prompt("Copiar manualmente:", text); } }
+
+async function openApplicationView(id){
+  const box=qs("#requestDetailBox");
+  box.className="card";
+  box.innerHTML="<h3>Formulario guardado</h3><p>Cargando datos persistidos...</p>";
+  try{
+    if(APPS_SCRIPT_URL.includes("PEGAR_AQUI")) throw new Error("Falta configurar APPS_SCRIPT_URL.");
+    const r=await fetch(APPS_SCRIPT_URL+"?action=getApplicationView&request_id="+encodeURIComponent(id));
+    const j=await r.json();
+    if(!j.ok) throw new Error(j.error||"No se pudo cargar formulario guardado.");
+    renderDetail(j);
+  }
+  catch(e){ box.innerHTML=`<div class="actions"><button class="btn ghost" onclick="closeDetailView()">Cerrar vista</button></div><h3>Formulario guardado</h3><div class="notice bad">${esc(e.message)}</div>`; }
+}
+
 async function openDetail(id){
   const box=qs("#requestDetailBox");
   box.className="card";
@@ -1513,7 +1563,7 @@ function initViewMode(){
   if(m) m.onclick = () => setViewMode("mobile");
 }
 
-console.log("e-Up RRHH panel v17.1.8 - 2026-05-27");
+console.log("e-Up RRHH panel v18.0.0 - 2026-05-27");
 initViewMode();
 init();
 </script>
