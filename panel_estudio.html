@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- e-Up RRHH Panel del Estudio | VERSION v17.1.7 | 2026-05-27 -->
+<!-- e-Up RRHH Panel del Estudio | VERSION v17.1.8 | 2026-05-27 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -88,7 +88,7 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
     <button type="button" id="viewModeDesktop">Vista escritorio</button>
     <button type="button" id="viewModeMobile">Vista celular</button>
   </div>
-  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v17.1.7</span>
+  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v17.1.8</span>
 </div></div></div>
 <div class="wrap"><div class="paper">
 <div class="doc-head"><div class="doc-title">Panel del Estudio</div><p class="hint center">Crear solicitud, seleccionar beneficio, generar token, enviar mail al empleador, controlar estado y cerrar trámite.</p></div>
@@ -293,10 +293,10 @@ Estudio</textarea></div>
 </section>
 </main></div></div></div>
 <script>
-const APP_VERSION = "v17.1.7";
+const APP_VERSION = "v17.1.8";
 const APP_BUILD_DATE = "2026-05-27";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt3ezc7-m7lXcQTwfUfAaAkU-tkipho7JYko4bdsoRmruzON43Y8Rp2_klo8LTzX6O/exec";
-const FORM_URL = "https://github.com/clgest/auditoria-system/";
+const FORM_URL = "https://clgest.github.io/auditoria-system/";
 const SECTIONS=["Dashboard","Cliente","Beneficio","Crear link","Lote de altas","Centro comunicaciones","Alta Temprana","Cierre"];
 
 const EMPLOYER_CONTROLS = [
@@ -596,9 +596,9 @@ async function checkBackendVersion(){
     const r=await fetch(APPS_SCRIPT_URL+'?action=setupInfo');
     const j=await r.json();
     const backend=j.version||'sin versión';
-    const ok=backend==='v17.1.7';
+    const ok=backend==='v17.1.8';
     box.className='notice '+(ok?'ok':'bad');
-    box.innerHTML='<strong>Backend Apps Script:</strong> '+esc(backend)+' | <strong>Panel:</strong> v17.1.7'+(ok?'':'<br>Atención: el Panel está actualizado pero Code.gs/App Web no coincide. Reemplazar Code.gs e implementar nueva versión.');
+    box.innerHTML='<strong>Backend Apps Script:</strong> '+esc(backend)+' | <strong>Panel:</strong> v17.1.8'+(ok?'':'<br>Atención: el Panel está actualizado pero Code.gs/App Web no coincide. Reemplazar Code.gs e implementar nueva versión.');
     box.classList.remove('hidden');
   }catch(e){
     box.className='notice bad'; box.textContent='No se pudo verificar versión backend: '+e.message; box.classList.remove('hidden');
@@ -793,19 +793,24 @@ function renderRows(rows){
     const id = esc(r.id || "");
     const link = esc(r.link || "");
     const pdf = esc(r.pdf_url || "");
+    const applicant = r.applicant_name || "";
+    const applicantCuil = r.applicant_cuil || "";
     const pdfButton = pdf
       ? `<button onclick="openLink('${pdf}')" class="btn ghost">PDF</button>`
-      : `<button class="btn secondary" disabled title="El PDF se genera cuando el postulante envía la solicitud. Use Formulario para ver datos parciales.">Sin PDF</button>`;
+      : `<button class="btn secondary" disabled title="El PDF se genera cuando el postulante envía la solicitud.">Sin PDF</button>`;
+    const formButton = r.link
+      ? `<button onclick="openApplicantForm('${id}')" class="btn warn" title="Abrir el formulario real de carga del postulante">Formulario</button>`
+      : `<button class="btn secondary" disabled>Sin formulario</button>`;
     return `<tr>
       <td>${esc(r.numero_solicitud || r.id || "")}<div class="help">${esc(r.id||"")}</div></td>
       <td>${esc(r.employer_name)}<div class="help">${esc(r.employer_cuit||"")}</div></td>
-      <td>${esc(r.applicant_name||"")}<div class="help">${esc(r.applicant_cuil||"")}</div></td>
+      <td>${esc(applicant || "Sin datos")}<div class="help">${esc(applicantCuil||"")}</div></td>
       <td>${esc(r.status)}<div class="help">${esc(r.estado_documental||"")}</div></td>
       <td>${esc(r.benefit_name)}</td>
       <td style="white-space:nowrap">
         <button onclick="selectRequestAndOpen('${id}','detail')" class="btn ghost">Abrir</button>
         <button onclick="copyText('${link}')" class="btn ghost">Copiar link</button>
-        <button onclick="selectRequestAndOpen('${id}','form')" class="btn warn">Formulario</button>
+        ${formButton}
         <button onclick="selectRequestAndOpen('${id}','mail')" class="btn ghost">Mail</button>
         ${pdfButton}
         <button onclick="cancelReq('${id}')" class="btn danger">Anular</button>
@@ -1182,10 +1187,20 @@ function selectRequestById(id){
   return r;
 }
 
+
+function openApplicantForm(id){
+  const r = selectRequestById(id) || REQUESTS_CACHE.find(x => String(x.id || x.request_id) === String(id));
+  if(!r || !r.link){
+    alert("No hay link de formulario registrado para esta solicitud.");
+    return;
+  }
+  window.open(r.link, "_blank");
+}
+
 function selectRequestAndOpen(id, action){
   selectRequestById(id);
   if(action === "detail") return openDetail(id);
-  if(action === "form") return openFormData(id);
+  if(action === "form") return openApplicantForm(id);
   if(action === "mail"){
     current = 5;
     renderSection();
@@ -1249,7 +1264,7 @@ function renderDetail(j){
   qs('#requestDetailBox').className='card';
   qs('#requestDetailBox').innerHTML=`
     <div class="actions"><button class="btn ghost" onclick="closeDetailView()">Cerrar vista</button></div>
-    <h3>Formulario / detalle operativo ${esc(r.numero_solicitud||r.id_solicitud||'')}</h3>
+    <h3>Detalle operativo ${esc(r.numero_solicitud||r.id_solicitud||'')}</h3>
     <div class="notice ok"><strong>Estado de lectura:</strong> ${esc(statusLabel)}. ${(j.documents_raw_count&&j.documents_raw_count>docs.length)||((j.documents||[]).length>docs.length)?'Se ocultaron duplicados técnicos de documentos.':''}</div>
     <div class="grid">
       <div class="card"><h3>Solicitud</h3><div class="kv">
@@ -1498,7 +1513,7 @@ function initViewMode(){
   if(m) m.onclick = () => setViewMode("mobile");
 }
 
-console.log("e-Up RRHH panel v17.1.7 - 2026-05-27");
+console.log("e-Up RRHH panel v17.1.8 - 2026-05-27");
 initViewMode();
 init();
 </script>
