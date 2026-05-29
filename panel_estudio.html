@@ -837,7 +837,7 @@ function renderRows(rows){
     const pdfButton = pdf
       ? `<button onclick="openLink('${pdf}')" class="btn ghost">PDF</button>`
       : `<button class="btn secondary" disabled title="El PDF se genera cuando el postulante envía la solicitud.">Sin PDF</button>`;
-    const formButton = r.link
+    const formButton = id
       ? `<button onclick="openApplicantForm('${id}')" class="btn warn" title="Ver formulario guardado desde la base">Formulario guardado</button>`
       : `<button class="btn secondary" disabled>Sin formulario</button>`;
     return `<tr>
