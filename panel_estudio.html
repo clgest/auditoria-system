@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- e-Up RRHH Panel del Estudio | VERSION v18.0.2 | 2026-05-27 -->
+<!-- e-Up RRHH Panel del Estudio | VERSION v18.1.2 | 2026-05-27 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -80,6 +80,18 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
 
 @media(max-width:820px){.wrap{padding:8px}.layout{grid-template-columns:1fr}.nav{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line);display:flex;overflow:auto;gap:6px}.nav button{white-space:nowrap;margin:0;width:auto}.grid{grid-template-columns:1fr}.choicebar,.choicebar.three{grid-template-columns:1fr}.doc-title{font-size:20px}.kv{grid-template-columns:1fr}.btns{padding:10px}.btn{flex:1}.top h1{font-size:15px}}
 @media print{body{background:#fff}.top,.nav,.btns,.no-print{display:none!important}.wrap{max-width:none;padding:0}.paper{box-shadow:none;border:0;border-radius:0}.section{display:block;page-break-inside:avoid}.layout{display:block}}
+
+.audit-table{width:100%;table-layout:fixed;border-collapse:collapse}
+.audit-table th,.audit-table td{vertical-align:top;white-space:normal;word-break:break-word;overflow-wrap:anywhere}
+.audit-table .date-col{width:150px}
+.audit-table .actor-col{width:135px}
+.audit-table .action-col{width:190px}
+.audit-table .detail-col{width:auto}
+.audit-detail{font-size:12px;line-height:1.35;max-height:120px;overflow:auto;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:6px}
+.audit-detail .line{display:block;margin:0 0 3px}
+.audit-detail .key{font-weight:800;color:#344054}
+.log-short{font-size:12px;line-height:1.35}
+
 </style>
 </head>
 <body>
@@ -88,7 +100,7 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
     <button type="button" id="viewModeDesktop">Vista escritorio</button>
     <button type="button" id="viewModeMobile">Vista celular</button>
   </div>
-  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v18.0.2</span>
+  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v18.1.2</span>
 </div></div></div>
 <div class="wrap"><div class="paper">
 <div class="doc-head"><div class="doc-title">Panel del Estudio</div><p class="hint center">Crear solicitud, seleccionar beneficio, generar token, enviar mail al empleador, controlar estado y cerrar trámite.</p></div>
@@ -294,7 +306,7 @@ Estudio</textarea></div>
 </section>
 </main></div></div></div>
 <script>
-const APP_VERSION = "v18.0.2";
+const APP_VERSION = "v18.1.2";
 const APP_BUILD_DATE = "2026-05-29";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt3ezc7-m7lXcQTwfUfAaAkU-tkipho7JYko4bdsoRmruzON43Y8Rp2_klo8LTzX6O/exec";
 const FORM_URL = "https://clgest.github.io/auditoria-system/";
@@ -635,9 +647,9 @@ async function checkBackendVersion(){
     const r=await fetch(APPS_SCRIPT_URL+'?action=setupInfo');
     const j=await r.json();
     const backend=j.version||'sin versión';
-    const ok=backend==='v18.0.2';
+    const ok=backend==='v18.1.2';
     box.className='notice '+(ok?'ok':'bad');
-    box.innerHTML='<strong>Backend Apps Script:</strong> '+esc(backend)+' | <strong>Panel:</strong> v18.0.2'+(ok?'':'<br>Atención: el Panel está actualizado pero Code.gs/App Web no coincide. Reemplazar Code.gs e implementar nueva versión.');
+    box.innerHTML='<strong>Backend Apps Script:</strong> '+esc(backend)+' | <strong>Panel:</strong> v18.1.2'+(ok?'':'<br>Atención: el Panel está actualizado pero Code.gs/App Web no coincide. Reemplazar Code.gs e implementar nueva versión.');
     box.classList.remove('hidden');
   }catch(e){
     box.className='notice bad'; box.textContent='No se pudo verificar versión backend: '+e.message; box.classList.remove('hidden');
@@ -1342,7 +1354,159 @@ function actorLabel(a){
   return id || tipo || "";
 }
 
+
+function statusBadge(s){
+  s=String(s||"pendiente").toLowerCase();
+  const label={ok:"OK",observado:"Observado",faltante:"Faltante",no_aplica:"No aplica",subsanacion:"Requiere subsanación",pendiente:"Pendiente"}[s] || s;
+  const cls = s==="ok" ? "loaded" : (s==="observado" || s==="faltante" || s==="subsanacion" ? "warn" : "optional");
+  return `<span class="tag ${cls}">${esc(label)}</span>`;
+}
+function reviewByDoc(reviews, doc){
+  const id=String(doc.id_documento||doc.id||"");
+  const tipo=String(doc.tipo_documento||doc.type||"");
+  return (reviews||[]).find(r => String(r.id_documento||"")===id) || (reviews||[]).find(r => String(r.tipo_documento||"")===tipo) || {};
+}
+async function saveReviewFromUI(requestId, idx){
+  const tipo = qs(`#rev_tipo_${idx}`)?.value || "";
+  const iddoc = qs(`#rev_docid_${idx}`)?.value || "";
+  const estado = qs(`#rev_estado_${idx}`)?.value || "pendiente";
+  const obs = qs(`#rev_obs_${idx}`)?.value || "";
+  try{
+    const r = await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"saveDocumentReview",payload:{id_solicitud: requestId,id_documento: iddoc,tipo_documento: tipo,estado_revision: estado,observacion: obs,autor: "operador_estudio"}})});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error || "No se pudo guardar revisión.");
+    alert("Revisión guardada.");
+    openApplicationView(requestId);
+  }catch(e){ alert("Error guardando revisión: " + e.message); }
+}
+async function buildReviewMailFromUI(requestId){
+  try{
+    const r = await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"buildDocumentReviewMail",payload:{id_solicitud:requestId}})});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error || "No se pudo armar mail.");
+    const box = qs("#reviewMailBox");
+    if(box){
+      box.className="card";
+      box.innerHTML = `<h3>Mail sugerido por documentación observada/pendiente</h3><div class="field"><label>Para</label><input value="${esc(j.to||"")}" readonly></div><div class="field"><label>Asunto</label><input value="${esc(j.subject||"")}" readonly></div><div class="field"><label>Cuerpo</label><textarea rows="9" readonly>${esc(j.body||"")}</textarea></div><p class="help">Copiar este texto y enviarlo desde el Centro de comunicaciones o responder el hilo del trámite.</p>`;
+    }
+  }catch(e){ alert("Error armando mail: " + e.message); }
+}
+function renderFormLikeView(j){
+  const r=j.request||{};
+  const applicant=(j.applicant||[])[(j.applicant||[]).length-1]||{};
+  const payload=j.form_payload||{};
+  const docs=j.documents||[];
+  const reviews=j.reviews||[];
+  const accept=(j.acceptances||[])[(j.acceptances||[]).length-1]||{};
+  const requestId = r.id_solicitud || payload.request_id || "";
+  const domicilio = payload.address_text || [payload.street||'',payload.street_number||'',payload.floor||'',payload.neighborhood||'',payload.city||'',payload.department||'',payload.province||'',payload.postal_code||''].filter(Boolean).join(' - ');
+  const fullName = [applicant.apellido||payload.last_names||'', applicant.nombres||payload.first_names||''].filter(Boolean).join(', ') || r.nombre_postulante || '';
+  const cuil = applicant.cuil || payload.cuil || r.cuil_postulante || '';
+  const docNumber = [applicant.tipo_documento||payload.document_type||'', applicant.numero_documento||payload.document_number||''].filter(Boolean).join(' ');
+  const section = (title, body) => `<div class="card"><h3>${esc(title)}</h3>${body}</div>`;
+  const kv = arr => `<div class="kv">${arr.map(x=>`<strong>${esc(x[0])}</strong><span>${x[2]||esc(x[1]||"")}</span>`).join("")}</div>`;
+  const docCards = docs.length ? docs.map((d,i)=>{
+    const rev=reviewByDoc(reviews,d);
+    const estado=rev.estado_revision||"pendiente";
+    const url=d.url_drive||d.url||"";
+    return `<div class="doc-item"><input type="hidden" id="rev_tipo_${i}" value="${esc(d.tipo_documento||d.type||"")}"><input type="hidden" id="rev_docid_${i}" value="${esc(d.id_documento||d.id||"")}"><div class="doc-line"><div><strong>${esc(d.tipo_documento||d.type||"Documento")}</strong> ${statusBadge(estado)}<div class="help">${esc(d.nombre_archivo||d.nombre_archivo_normalizado||d.filename||"")}</div>${url?`<div><a target="_blank" href="${esc(url)}">Abrir documento</a></div>`:`<div class="help">Sin enlace Drive registrado. Ver documento desde carpeta Drive.</div>`}</div></div><div class="grid" style="margin-top:8px"><div class="field"><label>Revisión Estudio</label><select id="rev_estado_${i}"><option value="pendiente" ${estado==="pendiente"?"selected":""}>Pendiente</option><option value="ok" ${estado==="ok"?"selected":""}>OK</option><option value="observado" ${estado==="observado"?"selected":""}>Observado</option><option value="faltante" ${estado==="faltante"?"selected":""}>Faltante</option><option value="no_aplica" ${estado==="no_aplica"?"selected":""}>No aplica</option><option value="subsanacion" ${estado==="subsanacion"?"selected":""}>Requiere subsanación</option></select></div><div class="field"><label>Observación</label><input id="rev_obs_${i}" value="${esc(rev.observacion||"")}" placeholder="Ej.: ilegible, falta dorso, no corresponde, etc."></div></div><div class="actions" style="margin-top:8px"><button class="btn ghost" onclick="saveReviewFromUI('${esc(requestId)}',${i})">Guardar revisión</button></div></div>`;
+  }).join("") : "<p>No hay documentos registrados para revisar.</p>";
+  return `<div class="actions"><button class="btn ghost" onclick="closeDetailView()">Cerrar vista</button><button class="btn warn" onclick="buildReviewMailFromUI('${esc(requestId)}')">Armar mail con pendientes/observados</button></div><h3>Formulario guardado / Auditoría Estudio</h3><div class="notice ok"><strong>Modo lectura:</strong> los datos declarados por el postulante no se modifican. La revisión documental se registra como capa de auditoría del Estudio.</div>${section("1. Solicitud", kv([["Nº formal", r.numero_solicitud||""],["ID sistema", r.id_solicitud||""],["Empleador", r.razon_social||""],["CUIT", r.cuit_empleador||""],["Estado", r.estado||""],["Estado documental", r.estado_documental||""],["Beneficio", r.beneficio||""]]))}${section("2. Datos personales", kv([["Apellido/s y nombre/s", fullName],["CUIL", cuil],["Documento", docNumber],["Fecha nacimiento", applicant.fecha_nacimiento||payload.birth_date||""],["Email", applicant.email||payload.email||r.email_postulante||""],["Teléfono", applicant.telefono||payload.phone||""]]))}${section("3. Domicilio", `<p>${esc(domicilio||"Sin domicilio informado")}</p>`)}${section("4. Situación laboral/previsional", kv([["Último empleador", [payload.last_employer_cuit,payload.last_employer_name,payload.last_employer_exit_date,payload.previous_position].filter(Boolean).join(" - ")],["Prestación por desempleo", payload.unemployment_benefit||""],["Jubilación/pensión/retiro", payload.pension_benefit||""],["Discapacidad/incapacidad", [payload.disability,payload.disability_detail].filter(Boolean).join(" - ")],["Construcción/libreta", [payload.construction_book,payload.construction_book_detail].filter(Boolean).join(" - ")]]))}${section("5. Documentación y auditoría del Estudio", docCards + `<div id="reviewMailBox" class="hidden"></div>`)}${section("6. DDJJ / aceptación", kv([["DDJJ", accept.id_aceptacion ? "Aceptada" : "Sin aceptación registrada"],["Aceptante", accept.nombre_aceptante||payload.acceptant||""],["CUIL aceptante", accept.cuil_aceptante||payload.cuil_confirmation||""],["Fecha/hora", formatSheetDate(accept.fecha_hora||payload.accepted_at||"")],["Hash DDJJ", truncateHash(accept.hash_texto_ddjj||payload.declaration_text_hash||"")]]))}`;
+}
+
+
+function formatSheetDate(v){
+  if(v===undefined || v===null || v==="") return "";
+  const s=String(v).trim();
+  if(/^\d+(\.\d+)?$/.test(s) && Number(s)>30000 && Number(s)<80000){
+    const d=new Date((Number(s)-25569)*86400*1000);
+    return d.toLocaleString("es-AR",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+  }
+  const d=new Date(s);
+  if(!isNaN(d.getTime())) return d.toLocaleString("es-AR",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+  return s;
+}
+function truncateHash(s){
+  s=String(s||"");
+  return s.length>18 ? s.slice(0,10)+"…"+s.slice(-8) : s;
+}
+function actionLabel(action){
+  const map={
+    recovered_from_pdf:"Recuperado PDF",
+    request_created_and_mail_sent:"Solicitud creada",
+    system_self_test:"Test sistema",
+    application_submitted:"Formulario enviado",
+    signed_pdf_uploaded:"Firma cargada",
+    alta_temprana_uploaded:"Alta Temprana cargada",
+    alta_temprana_mail_sent:"Alta Temprana enviada",
+    request_cancelled:"Solicitud anulada",
+    status_updated:"Estado actualizado",
+    employer_saved:"Cliente guardado",
+    benefit_updated:"Beneficio actualizado",
+    envio_link_alta:"Link enviado",
+    document_review_saved:"Revisión documental"
+  };
+  return map[action] || action || "Evento";
+}
+function actorLabel(a){
+  if(!a) return "";
+  if(a.autor) return a.autor;
+  const tipo=a.actor_tipo || a.actor_type || "";
+  const id=a.actor_id || a.actor_identifier || "";
+  if(tipo==="sistema") return "Sistema";
+  if(tipo==="estudio") return id ? "Estudio / "+id : "Estudio";
+  if(tipo==="postulante") return id ? "Postulante / "+id : "Postulante";
+  if(tipo==="empleador") return id ? "Empleador / "+id : "Empleador";
+  return id || tipo || "";
+}
+function parseMaybeJson(value){
+  if(!value) return null;
+  if(typeof value==="object") return value;
+  try{return JSON.parse(String(value));}catch(e){return null;}
+}
+function auditDetailHtml(value){
+  const obj=parseMaybeJson(value);
+  if(!obj) return `<div class="audit-detail">${esc(String(value||""))}</div>`;
+  const rows=[];
+  if(obj.motivo) rows.push(["Motivo", obj.motivo]);
+  if(obj.employer) rows.push(["CUIT", obj.employer]);
+  if(obj.benefit) rows.push(["Beneficio", obj.benefit]);
+  if(obj.documentos_recuperados!==undefined) rows.push(["Docs", obj.documentos_recuperados]);
+  if(obj.pdf_hash) rows.push(["PDF", truncateHash(obj.pdf_hash)]);
+  if(obj.payload_hash) rows.push(["Datos", truncateHash(obj.payload_hash)]);
+  Object.keys(obj).forEach(k=>{
+    if(["motivo","employer","benefit","documentos_recuperados","pdf_hash","payload_hash"].includes(k)) return;
+    const val=obj[k];
+    if(val===undefined || val===null || val==="" || typeof val==="object") return;
+    rows.push([k, String(val).length>80 ? String(val).slice(0,80)+"…" : String(val)]);
+  });
+  return `<div class="audit-detail">${rows.map(r=>`<span class="line"><span class="key">${esc(r[0])}:</span> ${esc(String(r[1]))}</span>`).join("")}</div>`;
+}
+function mailLogTableHtml(mails){
+  return mails && mails.length ? `<table class="table audit-table">
+    <tr><th class="date-col">Fecha</th><th>Destinatario</th><th>Motivo</th><th>Estado</th></tr>
+    ${mails.map(m=>`<tr>
+      <td class="date-col">${esc(formatSheetDate(m.sent_at||m.fecha||m.created_at))}</td>
+      <td>${esc(m.destinatario_email||"")}</td>
+      <td>${esc(actionLabel(m.motivo||""))}</td>
+      <td>${esc(m.estado||"")}</td>
+    </tr>`).join("")}
+  </table>` : "<p>Sin mails registrados.</p>";
+}
+function auditTableHtml(audit){
+  return audit && audit.length ? `<table class="table audit-table">
+    <tr><th class="date-col">Fecha</th><th class="actor-col">Autor</th><th class="action-col">Acción</th><th class="detail-col">Detalle</th></tr>
+    ${audit.slice(-15).reverse().map(a=>`<tr>
+      <td class="date-col">${esc(formatSheetDate(a.fecha||a.created_at))}</td>
+      <td class="actor-col">${esc(actorLabel(a))}</td>
+      <td class="action-col">${esc(actionLabel(a.accion_tecnica||a.accion_operativa||a.accion||a.action))}</td>
+      <td class="detail-col">${auditDetailHtml(a.detalle||a.details)}</td>
+    </tr>`).join("")}
+  </table>` : "<p>Sin eventos.</p>";
+}
+
 function renderDetail(j){
+  if(j && (j.view_type==='formulario_guardado' || j.read_only)){ qs('#requestDetailBox').className='card'; qs('#requestDetailBox').innerHTML=renderFormLikeView(j); return; }
   const r=j.request||{};
   const applicant=(j.applicant||[])[(j.applicant||[]).length-1]||{};
   const accept=(j.acceptances||[])[(j.acceptances||[]).length-1]||{};
@@ -1631,7 +1795,7 @@ function initViewMode(){
   if(m) m.onclick = () => setViewMode("mobile");
 }
 
-console.log("e-Up RRHH panel v18.0.2 - 2026-05-27");
+console.log("e-Up RRHH panel v18.1.2 - 2026-05-27");
 initViewMode();
 init();
 </script>
