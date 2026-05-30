@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- e-Up RRHH Panel del Estudio | VERSION v18.0.0 | 2026-05-27 -->
+<!-- e-Up RRHH Panel del Estudio | VERSION v18.0.2 | 2026-05-27 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -88,7 +88,7 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
     <button type="button" id="viewModeDesktop">Vista escritorio</button>
     <button type="button" id="viewModeMobile">Vista celular</button>
   </div>
-  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v18.0.0</span>
+  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v18.0.2</span>
 </div></div></div>
 <div class="wrap"><div class="paper">
 <div class="doc-head"><div class="doc-title">Panel del Estudio</div><p class="hint center">Crear solicitud, seleccionar beneficio, generar token, enviar mail al empleador, controlar estado y cerrar trámite.</p></div>
@@ -294,7 +294,7 @@ Estudio</textarea></div>
 </section>
 </main></div></div></div>
 <script>
-const APP_VERSION = "v18.0.0";
+const APP_VERSION = "v18.0.2";
 const APP_BUILD_DATE = "2026-05-29";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt3ezc7-m7lXcQTwfUfAaAkU-tkipho7JYko4bdsoRmruzON43Y8Rp2_klo8LTzX6O/exec";
 const FORM_URL = "https://clgest.github.io/auditoria-system/";
@@ -635,9 +635,9 @@ async function checkBackendVersion(){
     const r=await fetch(APPS_SCRIPT_URL+'?action=setupInfo');
     const j=await r.json();
     const backend=j.version||'sin versión';
-    const ok=backend==='v18.0.0';
+    const ok=backend==='v18.0.2';
     box.className='notice '+(ok?'ok':'bad');
-    box.innerHTML='<strong>Backend Apps Script:</strong> '+esc(backend)+' | <strong>Panel:</strong> v18.0.0'+(ok?'':'<br>Atención: el Panel está actualizado pero Code.gs/App Web no coincide. Reemplazar Code.gs e implementar nueva versión.');
+    box.innerHTML='<strong>Backend Apps Script:</strong> '+esc(backend)+' | <strong>Panel:</strong> v18.0.2'+(ok?'':'<br>Atención: el Panel está actualizado pero Code.gs/App Web no coincide. Reemplazar Code.gs e implementar nueva versión.');
     box.classList.remove('hidden');
   }catch(e){
     box.className='notice bad'; box.textContent='No se pudo verificar versión backend: '+e.message; box.classList.remove('hidden');
@@ -1274,6 +1274,74 @@ async function openDetail(id){
   }
   catch(e){ box.innerHTML=`<div class="actions"><button class="btn ghost" onclick="closeDetailView()">Cerrar vista</button></div><h3>Detalle de solicitud</h3><div class="notice bad">${esc(e.message)}</div>`; }
 }
+
+function formatSheetDate(v){
+  if(v===undefined || v===null || v==="") return "";
+  const s=String(v);
+  if(/^\d+(\.\d+)?$/.test(s) && Number(s)>30000 && Number(s)<80000){
+    const d=new Date((Number(s)-25569)*86400*1000);
+    return d.toLocaleString("es-AR",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+  }
+  const d=new Date(s);
+  if(!isNaN(d.getTime())) return d.toLocaleString("es-AR",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+  return s;
+}
+function truncateHash(s){
+  s=String(s||"");
+  return s.length>18 ? s.slice(0,10)+"…"+s.slice(-8) : s;
+}
+function safeJsonDetail(value){
+  if(!value) return null;
+  if(typeof value==="object") return value;
+  try{return JSON.parse(String(value));}catch(e){return null;}
+}
+function prettyOperationalDetail(value){
+  const obj=safeJsonDetail(value);
+  if(!obj) return esc(String(value||""));
+  const lines=[];
+  if(obj.motivo) lines.push("<strong>Motivo:</strong> "+esc(obj.motivo));
+  if(obj.employer) lines.push("<strong>CUIT empleador:</strong> "+esc(obj.employer));
+  if(obj.benefit) lines.push("<strong>Beneficio:</strong> "+esc(obj.benefit));
+  if(obj.documentos_recuperados!==undefined) lines.push("<strong>Documentos recuperados:</strong> "+esc(obj.documentos_recuperados));
+  if(obj.pdf_hash) lines.push("<strong>Hash PDF:</strong> <span class='mono'>"+esc(truncateHash(obj.pdf_hash))+"</span>");
+  if(obj.payload_hash) lines.push("<strong>Hash datos:</strong> <span class='mono'>"+esc(truncateHash(obj.payload_hash))+"</span>");
+  Object.keys(obj).forEach(k=>{
+    if(["motivo","employer","benefit","documentos_recuperados","pdf_hash","payload_hash"].includes(k)) return;
+    const val=obj[k];
+    if(val===undefined || val===null || val==="" || typeof val==="object") return;
+    lines.push("<strong>"+esc(k)+":</strong> "+esc(String(val)));
+  });
+  return lines.length ? lines.join("<br>") : esc(JSON.stringify(obj));
+}
+function actionLabel(action){
+  const map={
+    recovered_from_pdf:"Recuperación desde PDF",
+    request_created_and_mail_sent:"Solicitud creada y mail inicial enviado",
+    system_self_test:"Prueba de escritura del sistema",
+    application_submitted:"Formulario enviado por postulante",
+    signed_pdf_uploaded:"Copia firmada cargada",
+    alta_temprana_uploaded:"Alta Temprana cargada",
+    alta_temprana_mail_sent:"Alta Temprana enviada al empleador",
+    request_cancelled:"Solicitud anulada",
+    status_updated:"Estado actualizado",
+    employer_saved:"Cliente guardado",
+    benefit_updated:"Beneficio actualizado",
+    envio_link_alta:"Envío link de alta"
+  };
+  return map[action] || action || "Evento";
+}
+function actorLabel(a){
+  if(!a) return "";
+  if(a.autor) return a.autor;
+  const tipo=a.actor_tipo || a.actor_type || "";
+  const id=a.actor_id || a.actor_identifier || "";
+  if(tipo==="sistema") return "Sistema";
+  if(tipo==="estudio") return id ? "Estudio / "+id : "Estudio";
+  if(tipo==="postulante") return id ? "Postulante / "+id : "Postulante";
+  if(tipo==="empleador") return id ? "Empleador / "+id : "Empleador";
+  return id || tipo || "";
+}
+
 function renderDetail(j){
   const r=j.request||{};
   const applicant=(j.applicant||[])[(j.applicant||[]).length-1]||{};
@@ -1363,7 +1431,7 @@ function renderDetail(j){
     <h3>PDF generado vigente</h3>
     ${pdfs.length?`<table class="table"><tr><th>Tipo</th><th>Hash</th><th>Acceso</th></tr>${pdfs.map(p=>`<tr><td>${esc(p.tipo_pdf)}</td><td class="mono">${esc(p.hash_pdf)}</td><td>${p.url_drive?`<a target="_blank" href="${esc(p.url_drive)}">Abrir</a>`:''}</td></tr>`).join('')}</table>`:'<p>Sin PDF registrado.</p>'}
     <h3>Subir copia firmada por empleado</h3><div class="grid"><div class="field"><input type="file" id="signedPdfFile" accept=".pdf,image/*"></div><div class="field"><button class="btn ghost" onclick="uploadSignedPdf('${esc(r.id_solicitud)}')">Subir copia firmada</button></div></div><div id="signedPdfResult" class="notice hidden"></div>
-    <h3>Mail log</h3>${mails.length?`<table class="table"><tr><th>Fecha</th><th>Destinatario</th><th>Motivo</th><th>Estado</th></tr>${mails.map(m=>`<tr><td>${esc(m.sent_at)}</td><td>${esc(m.destinatario_email)}</td><td>${esc(m.motivo)}</td><td>${esc(m.estado)}</td></tr>`).join('')}</table>`:'<p>Sin mails registrados.</p>'}
+    <h3>Mail log</h3>${mails.length?`<table class="table"><tr><th>Fecha</th><th>Destinatario</th><th>Motivo</th><th>Estado</th></tr>${mails.map(m=>`<tr><td>${esc(formatSheetDate(m.sent_at||m.fecha||m.created_at))}</td><td>${esc(m.destinatario_email)}</td><td>${esc(actionLabel(m.motivo))}</td><td>${esc(m.estado)}</td></tr>`).join('')}</table>`:'<p>Sin mails registrados.</p>'}
     <h3>Auditoría operativa</h3>${audit.length?`<table class="table"><tr><th>Fecha</th><th>Autor</th><th>Acción</th><th>Detalle</th></tr>${audit.slice(-15).reverse().map(a=>`<tr><td>${esc(a.fecha||a.created_at||'')}</td><td>${esc(a.autor||a.actor_tipo||'')}</td><td>${esc(a.accion_operativa||a.accion||'')}</td><td>${esc(a.detalle||'')}</td></tr>`).join('')}</table>`:'<p>Sin eventos.</p>'}
   `;
 }
@@ -1563,7 +1631,7 @@ function initViewMode(){
   if(m) m.onclick = () => setViewMode("mobile");
 }
 
-console.log("e-Up RRHH panel v18.0.0 - 2026-05-27");
+console.log("e-Up RRHH panel v18.0.2 - 2026-05-27");
 initViewMode();
 init();
 </script>
