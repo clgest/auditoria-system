@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- e-Up RRHH Panel del Estudio | VERSION v18.1.2 | 2026-05-27 -->
+<!-- e-Up RRHH Panel del Estudio | VERSION v18.1.3 | 2026-05-27 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -100,7 +100,7 @@ body.force-desktop .choicebar.three{grid-template-columns:repeat(3,1fr)}
     <button type="button" id="viewModeDesktop">Vista escritorio</button>
     <button type="button" id="viewModeMobile">Vista celular</button>
   </div>
-  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v18.1.2</span>
+  El Estudio inicia y cierra el proceso <span class="version-badge">Panel v18.1.3</span>
 </div></div></div>
 <div class="wrap"><div class="paper">
 <div class="doc-head"><div class="doc-title">Panel del Estudio</div><p class="hint center">Crear solicitud, seleccionar beneficio, generar token, enviar mail al empleador, controlar estado y cerrar trámite.</p></div>
@@ -306,10 +306,10 @@ Estudio</textarea></div>
 </section>
 </main></div></div></div>
 <script>
-const APP_VERSION = "v18.1.2";
+const APP_VERSION = "v18.1.3";
 const APP_BUILD_DATE = "2026-05-29";
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt3ezc7-m7lXcQTwfUfAaAkU-tkipho7JYko4bdsoRmruzON43Y8Rp2_klo8LTzX6O/exec";
-const FORM_URL = "https://clgest.github.io/auditoria-system/";
+const APPS_SCRIPT_URL = "PEGAR_AQUI_LA_URL_DE_APPS_SCRIPT_WEB_APP_EXEC";
+const FORM_URL = "PEGAR_AQUI_URL_PUBLICA_DE_GITHUB_PAGES_INDEX_HTML";
 const SECTIONS=["Dashboard","Cliente","Beneficio","Crear link","Lote de altas","Centro comunicaciones","Alta Temprana","Cierre"];
 
 const EMPLOYER_CONTROLS = [
@@ -647,9 +647,9 @@ async function checkBackendVersion(){
     const r=await fetch(APPS_SCRIPT_URL+'?action=setupInfo');
     const j=await r.json();
     const backend=j.version||'sin versión';
-    const ok=backend==='v18.1.2';
+    const ok=backend==='v18.1.3';
     box.className='notice '+(ok?'ok':'bad');
-    box.innerHTML='<strong>Backend Apps Script:</strong> '+esc(backend)+' | <strong>Panel:</strong> v18.1.2'+(ok?'':'<br>Atención: el Panel está actualizado pero Code.gs/App Web no coincide. Reemplazar Code.gs e implementar nueva versión.');
+    box.innerHTML='<strong>Backend Apps Script:</strong> '+esc(backend)+' | <strong>Panel:</strong> v18.1.3'+(ok?'':'<br>Atención: el Panel está actualizado pero Code.gs/App Web no coincide. Reemplazar Code.gs e implementar nueva versión.');
     box.classList.remove('hidden');
   }catch(e){
     box.className='notice bad'; box.textContent='No se pudo verificar versión backend: '+e.message; box.classList.remove('hidden');
@@ -1396,6 +1396,7 @@ function renderFormLikeView(j){
   const applicant=(j.applicant||[])[(j.applicant||[]).length-1]||{};
   const payload=j.form_payload||{};
   const docs=j.documents||[];
+  const docsHistory=j.documents_history||[];
   const reviews=j.reviews||[];
   const accept=(j.acceptances||[])[(j.acceptances||[]).length-1]||{};
   const requestId = r.id_solicitud || payload.request_id || "";
@@ -1405,13 +1406,14 @@ function renderFormLikeView(j){
   const docNumber = [applicant.tipo_documento||payload.document_type||'', applicant.numero_documento||payload.document_number||''].filter(Boolean).join(' ');
   const section = (title, body) => `<div class="card"><h3>${esc(title)}</h3>${body}</div>`;
   const kv = arr => `<div class="kv">${arr.map(x=>`<strong>${esc(x[0])}</strong><span>${x[2]||esc(x[1]||"")}</span>`).join("")}</div>`;
+  const docHistoryNotice = docsHistory.length ? `<div class="notice warn"><strong>Historial documental:</strong> existen ${docsHistory.length} carga(s) anterior(es) ocultas en esta vista para no duplicar la auditoría. No se borran; quedan como historial.</div>` : "";
   const docCards = docs.length ? docs.map((d,i)=>{
     const rev=reviewByDoc(reviews,d);
     const estado=rev.estado_revision||"pendiente";
     const url=d.url_drive||d.url||"";
-    return `<div class="doc-item"><input type="hidden" id="rev_tipo_${i}" value="${esc(d.tipo_documento||d.type||"")}"><input type="hidden" id="rev_docid_${i}" value="${esc(d.id_documento||d.id||"")}"><div class="doc-line"><div><strong>${esc(d.tipo_documento||d.type||"Documento")}</strong> ${statusBadge(estado)}<div class="help">${esc(d.nombre_archivo||d.nombre_archivo_normalizado||d.filename||"")}</div>${url?`<div><a target="_blank" href="${esc(url)}">Abrir documento</a></div>`:`<div class="help">Sin enlace Drive registrado. Ver documento desde carpeta Drive.</div>`}</div></div><div class="grid" style="margin-top:8px"><div class="field"><label>Revisión Estudio</label><select id="rev_estado_${i}"><option value="pendiente" ${estado==="pendiente"?"selected":""}>Pendiente</option><option value="ok" ${estado==="ok"?"selected":""}>OK</option><option value="observado" ${estado==="observado"?"selected":""}>Observado</option><option value="faltante" ${estado==="faltante"?"selected":""}>Faltante</option><option value="no_aplica" ${estado==="no_aplica"?"selected":""}>No aplica</option><option value="subsanacion" ${estado==="subsanacion"?"selected":""}>Requiere subsanación</option></select></div><div class="field"><label>Observación</label><input id="rev_obs_${i}" value="${esc(rev.observacion||"")}" placeholder="Ej.: ilegible, falta dorso, no corresponde, etc."></div></div><div class="actions" style="margin-top:8px"><button class="btn ghost" onclick="saveReviewFromUI('${esc(requestId)}',${i})">Guardar revisión</button></div></div>`;
+    return `<div class="doc-item"><input type="hidden" id="rev_tipo_${i}" value="${esc(d.tipo_documento||d.type||"")}"><input type="hidden" id="rev_docid_${i}" value="${esc(d.id_documento||d.id||"")}"><div class="doc-line"><div><strong>${esc(d.tipo_documento||d.type||"Documento")}</strong> <span class="tag loaded">Documento: cargado</span> <span class="tag optional">${estado==="pendiente"?"Revisión: sin revisar":("Revisión: "+esc(estado))}</span><div class="help">${esc(d.nombre_archivo||d.nombre_archivo_normalizado||d.filename||"")}</div>${url?`<div><a target="_blank" href="${esc(url)}">Abrir documento</a></div>`:`<div class="help">Sin enlace Drive registrado. Ver documento desde carpeta Drive.</div>`}</div></div><div class="grid" style="margin-top:8px"><div class="field"><label>Revisión Estudio</label><select id="rev_estado_${i}"><option value="pendiente" ${estado==="pendiente"?"selected":""}>Pendiente</option><option value="ok" ${estado==="ok"?"selected":""}>OK</option><option value="observado" ${estado==="observado"?"selected":""}>Observado</option><option value="faltante" ${estado==="faltante"?"selected":""}>Faltante</option><option value="no_aplica" ${estado==="no_aplica"?"selected":""}>No aplica</option><option value="subsanacion" ${estado==="subsanacion"?"selected":""}>Requiere subsanación</option></select></div><div class="field"><label>Observación</label><input id="rev_obs_${i}" value="${esc(rev.observacion||"")}" placeholder="Ej.: ilegible, falta dorso, no corresponde, etc."></div></div><div class="actions" style="margin-top:8px"><button class="btn ghost" onclick="saveReviewFromUI('${esc(requestId)}',${i})">Guardar revisión</button></div></div>`;
   }).join("") : "<p>No hay documentos registrados para revisar.</p>";
-  return `<div class="actions"><button class="btn ghost" onclick="closeDetailView()">Cerrar vista</button><button class="btn warn" onclick="buildReviewMailFromUI('${esc(requestId)}')">Armar mail con pendientes/observados</button></div><h3>Formulario guardado / Auditoría Estudio</h3><div class="notice ok"><strong>Modo lectura:</strong> los datos declarados por el postulante no se modifican. La revisión documental se registra como capa de auditoría del Estudio.</div>${section("1. Solicitud", kv([["Nº formal", r.numero_solicitud||""],["ID sistema", r.id_solicitud||""],["Empleador", r.razon_social||""],["CUIT", r.cuit_empleador||""],["Estado", r.estado||""],["Estado documental", r.estado_documental||""],["Beneficio", r.beneficio||""]]))}${section("2. Datos personales", kv([["Apellido/s y nombre/s", fullName],["CUIL", cuil],["Documento", docNumber],["Fecha nacimiento", applicant.fecha_nacimiento||payload.birth_date||""],["Email", applicant.email||payload.email||r.email_postulante||""],["Teléfono", applicant.telefono||payload.phone||""]]))}${section("3. Domicilio", `<p>${esc(domicilio||"Sin domicilio informado")}</p>`)}${section("4. Situación laboral/previsional", kv([["Último empleador", [payload.last_employer_cuit,payload.last_employer_name,payload.last_employer_exit_date,payload.previous_position].filter(Boolean).join(" - ")],["Prestación por desempleo", payload.unemployment_benefit||""],["Jubilación/pensión/retiro", payload.pension_benefit||""],["Discapacidad/incapacidad", [payload.disability,payload.disability_detail].filter(Boolean).join(" - ")],["Construcción/libreta", [payload.construction_book,payload.construction_book_detail].filter(Boolean).join(" - ")]]))}${section("5. Documentación y auditoría del Estudio", docCards + `<div id="reviewMailBox" class="hidden"></div>`)}${section("6. DDJJ / aceptación", kv([["DDJJ", accept.id_aceptacion ? "Aceptada" : "Sin aceptación registrada"],["Aceptante", accept.nombre_aceptante||payload.acceptant||""],["CUIL aceptante", accept.cuil_aceptante||payload.cuil_confirmation||""],["Fecha/hora", formatSheetDate(accept.fecha_hora||payload.accepted_at||"")],["Hash DDJJ", truncateHash(accept.hash_texto_ddjj||payload.declaration_text_hash||"")]]))}`;
+  return `<div class="actions"><button class="btn ghost" onclick="closeDetailView()">Cerrar vista</button><button class="btn warn" onclick="buildReviewMailFromUI('${esc(requestId)}')">Armar mail con pendientes/observados</button></div><h3>Formulario guardado / Auditoría Estudio</h3><div class="notice ok"><strong>Modo lectura:</strong> los datos declarados por el postulante no se modifican. La revisión documental se registra como capa de auditoría del Estudio.</div>${section("1. Solicitud", kv([["Nº formal", r.numero_solicitud||""],["ID sistema", r.id_solicitud||""],["Empleador", r.razon_social||""],["CUIT", r.cuit_empleador||""],["Estado", r.estado||""],["Estado documental", r.estado_documental||""],["Beneficio", r.beneficio||""]]))}${section("2. Datos personales", kv([["Apellido/s y nombre/s", fullName],["CUIL", cuil],["Documento", docNumber],["Fecha nacimiento", applicant.fecha_nacimiento||payload.birth_date||""],["Email", applicant.email||payload.email||r.email_postulante||""],["Teléfono", applicant.telefono||payload.phone||""]]))}${section("3. Domicilio", `<p>${esc(domicilio||"Sin domicilio informado")}</p>`)}${section("4. Situación laboral/previsional", kv([["Último empleador", [payload.last_employer_cuit,payload.last_employer_name,payload.last_employer_exit_date,payload.previous_position].filter(Boolean).join(" - ")],["Prestación por desempleo", payload.unemployment_benefit||""],["Jubilación/pensión/retiro", payload.pension_benefit||""],["Discapacidad/incapacidad", [payload.disability,payload.disability_detail].filter(Boolean).join(" - ")],["Construcción/libreta", [payload.construction_book,payload.construction_book_detail].filter(Boolean).join(" - ")]]))}${section("5. Documentación y auditoría del Estudio", docHistoryNotice + docCards + `<div id="reviewMailBox" class="hidden"></div>`)}${section("6. DDJJ / aceptación", kv([["DDJJ", accept.id_aceptacion ? "Aceptada" : "Sin aceptación registrada"],["Aceptante", accept.nombre_aceptante||payload.acceptant||""],["CUIL aceptante", accept.cuil_aceptante||payload.cuil_confirmation||""],["Fecha/hora", formatSheetDate(accept.fecha_hora||payload.accepted_at||"")],["Hash DDJJ", truncateHash(accept.hash_texto_ddjj||payload.declaration_text_hash||"")]]))}`;
 }
 
 
@@ -1795,7 +1797,7 @@ function initViewMode(){
   if(m) m.onclick = () => setViewMode("mobile");
 }
 
-console.log("e-Up RRHH panel v18.1.2 - 2026-05-27");
+console.log("e-Up RRHH panel v18.1.3 - 2026-05-27");
 initViewMode();
 init();
 </script>
