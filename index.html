@@ -217,6 +217,90 @@ Esta solicitud fue generada por el Estudio y remitida al empleador. Usted solo d
 const APP_VERSION = "v18.1.3";
 const APP_BUILD_DATE = "2026-05-29";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyUtGPpqRFBGGJgddfiGn3lqDPJGdzxmKxcriAcazcS8tuKxmQkxfsc6yYkgVjl9-qANw/exec";
+
+
+/* Puente de comunicación con Apps Script.
+   Motivo: GitHub Pages y Apps Script pueden fallar con fetch directo por CORS.
+   Este bloque intercepta llamadas a APPS_SCRIPT_URL y las envía por iframe + google.script.run. */
+(function(){
+  const nativeFetch = window.fetch.bind(window);
+  const pending = new Map();
+  let frame = null;
+  let ready = false;
+  let readyPromise = null;
+
+  function isConfigured(){
+    return APPS_SCRIPT_URL && !String(APPS_SCRIPT_URL).includes('PEGAR_AQUI') && /\/exec(?:$|[?#])/.test(String(APPS_SCRIPT_URL));
+  }
+  function isAppsScriptRequest(input){
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    return isConfigured() && String(url).indexOf(APPS_SCRIPT_URL) === 0;
+  }
+  function appendBridgeFrame(){
+    if(frame || !isConfigured()) return;
+    frame = document.createElement('iframe');
+    frame.style.display = 'none';
+    frame.src = APPS_SCRIPT_URL + '?action=bridge&ts=' + Date.now();
+    document.body.appendChild(frame);
+  }
+  function ensureBridge(){
+    if(ready) return Promise.resolve();
+    if(readyPromise) return readyPromise;
+    readyPromise = new Promise((resolve, reject)=>{
+      const timeout = setTimeout(()=>reject(new Error('No se pudo abrir el puente con Apps Script. Verificar URL /exec y publicación como Aplicación web.')), 15000);
+      const onReady = ev => {
+        if(!ev.data || ev.data.source !== 'eup_apps_script_bridge_ready') return;
+        ready = true;
+        clearTimeout(timeout);
+        window.removeEventListener('message', onReady);
+        resolve();
+      };
+      window.addEventListener('message', onReady);
+      if(document.body) appendBridgeFrame();
+      else document.addEventListener('DOMContentLoaded', appendBridgeFrame, {once:true});
+    });
+    return readyPromise;
+  }
+  window.addEventListener('message', ev=>{
+    const data = ev.data || {};
+    if(data.source !== 'eup_apps_script_bridge' || !data.rpcId) return;
+    const item = pending.get(data.rpcId);
+    if(!item) return;
+    pending.delete(data.rpcId);
+    clearTimeout(item.timeout);
+    item.resolve(data.payload || {ok:true});
+  });
+  function requestFromFetch(input, init){
+    const method = String((init && init.method) || 'GET').toUpperCase();
+    const url = typeof input === 'string' ? input : input.url;
+    if(method === 'POST'){
+      const raw = (init && init.body) || '{}';
+      const body = typeof raw === 'string' ? JSON.parse(raw || '{}') : raw;
+      return {action: body.action || '', payload: body.payload || {}};
+    }
+    const u = new URL(url, location.href);
+    const payload = {};
+    u.searchParams.forEach((v,k)=>{ if(k !== 'action' && k !== 'ts' && k !== '_') payload[k]=v; });
+    return {action: u.searchParams.get('action') || '', payload};
+  }
+  function bridgeCall(req){
+    return ensureBridge().then(()=>new Promise((resolve, reject)=>{
+      const rpcId = 'rpc_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      const timeout = setTimeout(()=>{ pending.delete(rpcId); reject(new Error('Apps Script no respondió dentro del plazo.')); }, 90000);
+      pending.set(rpcId, {resolve, reject, timeout});
+      frame.contentWindow.postMessage({source:'eup_parent', rpcId, request:req}, '*');
+    }));
+  }
+  window.fetch = function(input, init){
+    if(!isAppsScriptRequest(input)) return nativeFetch(input, init);
+    try{
+      const req = requestFromFetch(input, init || {});
+      return bridgeCall(req).then(obj=>new Response(JSON.stringify(obj || {ok:true}), {status:200, headers:{'Content-Type':'application/json'}}));
+    }catch(e){
+      return Promise.resolve(new Response(JSON.stringify({ok:false,error:e.message || String(e)}), {status:200, headers:{'Content-Type':'application/json'}}));
+    }
+  };
+})();
 const DECLARATION_VERSION = "DDJJ-RRHH-2026-04";
 const DEFAULT_DECLARATION = `Declaro bajo juramento que la información consignada en la presente solicitud es completa, exacta y verdadera, y que mi situación laboral, previsional y/o social declarada es la vigente a la fecha de presentación.
 
